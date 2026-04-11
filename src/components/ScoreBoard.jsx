@@ -2,7 +2,7 @@ import { useState, useRef, useLayoutEffect } from 'react';
 import { ArrowDownUp } from 'lucide-react';
 import PlayerCard from './PlayerCard.jsx';
 
-export default function ScoreBoard({ players, dispatch }) {
+export default function ScoreBoard({ players, mode, dispatch }) {
   const dragFromRef = useRef(null);
   const [dragFrom, setDragFrom] = useState(null);
   const [insertAt, setInsertAt] = useState(null);
@@ -151,7 +151,7 @@ export default function ScoreBoard({ players, dispatch }) {
                   className="absolute top-0 right-0.5 h-full w-0.5 bg-blue-500 rounded-full z-30 pointer-events-none"
                 />
               )}
-              <PlayerCard player={player} dispatch={dispatch} />
+              <PlayerCard player={player} mode={mode} dispatch={dispatch} />
             </div>
           );
         })}

@@ -39,6 +39,15 @@ export default function Toolbar({ state, dispatch }) {
     }
   };
 
+  const isCircleCross = state.mode === 'circle-cross';
+
+  const handleModeToggle = () => {
+    dispatch({
+      type: 'mode/set',
+      payload: { mode: isCircleCross ? 'score' : 'circle-cross' },
+    });
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <input
@@ -58,6 +67,18 @@ export default function Toolbar({ state, dispatch }) {
       </button>
 
       <AddPlayerForm dispatch={dispatch} />
+
+      <button
+        onClick={handleModeToggle}
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+          isCircleCross
+            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-300'
+            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+        }`}
+        title={isCircleCross ? '+1/-1 モードに切替' : '○/✕ モードに切替'}
+      >
+        {isCircleCross ? '○/✕ モード' : '+1/-1 モード'}
+      </button>
 
       <div className="flex items-center gap-1 ml-auto">
         <button

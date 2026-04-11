@@ -72,7 +72,7 @@ function App() {
             <Toolbar state={state} dispatch={dispatch} />
           </div>
 
-          <ScoreBoard players={state.players} dispatch={dispatch} />
+          <ScoreBoard players={state.players} mode={state.mode} dispatch={dispatch} />
         </div>
       </div>
     </div>
