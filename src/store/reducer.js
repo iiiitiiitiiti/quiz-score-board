@@ -155,7 +155,7 @@ export function appReducer(state, action) {
     }
 
     case 'title/update': {
-      const title = String(action.payload.title ?? '').trimEnd();
+      const title = String(action.payload.title ?? '');
       return { ...state, title };
     }
 
