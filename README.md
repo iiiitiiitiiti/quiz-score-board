@@ -1,16 +1,48 @@
-# React + Vite
+# クイズ得点板
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+クイズ大会・授業・社内イベントなどで使えるリアルタイム得点管理Webアプリです。
 
-Currently, two official plugins are available:
+**デモ**: https://iiiitiiitiiti.github.io/quiz-score-board/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 機能
 
-## React Compiler
+- **プレイヤー管理** — プレイヤーの追加・削除
+- **スコア操作** — +1 / -1 ボタンでスコアをリアルタイム更新
+- **Undo / Redo** — スコア変更の取り消し・やり直し
+- **問題表示** — CSVファイルから問題・解答・備考を読み込んで表示
+- **スコアリセット** — 全プレイヤーのスコアを一括リセット
+- **全クリア** — すべてのデータを削除
+- **データ永続化** — ページをリロードしてもデータが保持される（localStorage）
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## CSV フォーマット
 
-## Expanding the ESLint configuration
+以下のヘッダーを持つCSVファイルをインポートできます。
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```csv
+No,Question,Answer,Note
+1,日本の首都は？,東京,都道府県ではなく都
+2,1+1は？,2,
+```
+
+| カラム | 必須 | 説明 |
+|--------|------|------|
+| No | ✓ | 問題番号 |
+| Question | ✓ | 問題文 |
+| Answer | ✓ | 答え |
+| Note | | 備考（省略可） |
+
+## 技術スタック
+
+- [React](https://react.dev/) + [Vite](https://vite.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Lucide React](https://lucide.dev/)
+- [PapaParse](https://www.papaparse.com/)
+
+## ローカルで起動する
+
+```bash
+npm install
+npm run dev
+```
+
+ブラウザで `http://localhost:5173` を開いてください。
