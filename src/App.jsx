@@ -37,7 +37,7 @@ function App() {
                 dispatch({ type: 'title/update', payload: { title: e.target.value } })
               }
               onBlur={() => setEditingTitle(false)}
-              onKeyDown={(e) => { if (e.key === 'Enter') setEditingTitle(false); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) setEditingTitle(false); }}
               autoFocus
             />
           ) : (
