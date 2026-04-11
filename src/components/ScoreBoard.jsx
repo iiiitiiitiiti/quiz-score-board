@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
 import { ArrowDownUp } from 'lucide-react';
 import PlayerCard from './PlayerCard.jsx';
 
@@ -7,6 +7,61 @@ export default function ScoreBoard({ players, dispatch }) {
   const [dragFrom, setDragFrom] = useState(null);
   const [insertAt, setInsertAt] = useState(null);
   const [sortedByScore, setSortedByScore] = useState(false);
+  const gridRef = useRef(null);
+  const prevPositions = useRef({});
+
+  const displayPlayers = sortedByScore
+    ? [...players].sort((a, b) => b.score - a.score)
+    : players;
+
+  const handleSortToggle = () => {
+    // FLIP - First: record current positions
+    if (gridRef.current) {
+      const cards = gridRef.current.querySelectorAll('[data-player-id]');
+      prevPositions.current = {};
+      cards.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+        prevPositions.current[card.dataset.playerId] = { x: rect.left, y: rect.top };
+      });
+    }
+    setSortedByScore((v) => !v);
+  };
+
+  // FLIP - Last → Invert → Play
+  useLayoutEffect(() => {
+    if (!gridRef.current || Object.keys(prevPositions.current).length === 0) return;
+
+    const cards = gridRef.current.querySelectorAll('[data-player-id]');
+    cards.forEach((card) => {
+      const id = card.dataset.playerId;
+      const old = prevPositions.current[id];
+      if (!old) return;
+
+      const newRect = card.getBoundingClientRect();
+      const dx = old.x - newRect.left;
+      const dy = old.y - newRect.top;
+      if (dx === 0 && dy === 0) return;
+
+      // Invert: instantly move back to old position
+      card.style.transform = `translate(${dx}px, ${dy}px)`;
+      card.style.transition = 'none';
+
+      // Play: let CSS transition animate to natural position
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          card.style.transform = '';
+          card.style.transition = 'transform 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          card.addEventListener(
+            'transitionend',
+            () => { card.style.transition = ''; },
+            { once: true }
+          );
+        });
+      });
+    });
+
+    prevPositions.current = {};
+  }, [sortedByScore]);
 
   if (players.length === 0) {
     return (
@@ -16,10 +71,6 @@ export default function ScoreBoard({ players, dispatch }) {
       </div>
     );
   }
-
-  const displayPlayers = sortedByScore
-    ? [...players].sort((a, b) => b.score - a.score)
-    : players;
 
   const handleDragStart = (index) => {
     dragFromRef.current = index;
@@ -55,7 +106,7 @@ export default function ScoreBoard({ players, dispatch }) {
     <div>
       <div className="flex justify-end mb-3">
         <button
-          onClick={() => setSortedByScore((v) => !v)}
+          onClick={handleSortToggle}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors ${
             sortedByScore
               ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
@@ -68,8 +119,9 @@ export default function ScoreBoard({ players, dispatch }) {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {displayPlayers.map((player, index) => {
+          const isFirst = index === 0;
           const isLast = index === displayPlayers.length - 1;
           const showLeftLine = !sortedByScore && insertAt === index;
           const showRightLine = !sortedByScore && insertAt === displayPlayers.length && isLast;
@@ -77,22 +129,28 @@ export default function ScoreBoard({ players, dispatch }) {
           return (
             <div
               key={player.id}
+              data-player-id={player.id}
               draggable={!sortedByScore}
               onDragStart={!sortedByScore ? () => handleDragStart(index) : undefined}
               onDragOver={!sortedByScore ? (e) => handleDragOver(e, index) : undefined}
               onDrop={!sortedByScore ? handleDrop : undefined}
               onDragEnd={!sortedByScore ? handleDragEnd : undefined}
-              className={`rounded-2xl transition-opacity ${
+              className={`relative rounded-2xl transition-opacity ${
                 !sortedByScore ? 'cursor-grab active:cursor-grabbing' : ''
               } ${dragFrom === index ? 'opacity-40' : ''}`}
-              style={
-                showLeftLine
-                  ? { boxShadow: '-3px 0 0 0 rgb(59 130 246)' }
-                  : showRightLine
-                  ? { boxShadow: '3px 0 0 0 rgb(59 130 246)' }
-                  : undefined
-              }
             >
+              {/* 挿入位置の縦線: カードとカードの間のgap中央に配置 */}
+              {showLeftLine && (
+                <div
+                  className="absolute top-0 h-full w-0.5 bg-blue-500 rounded-full z-30 pointer-events-none"
+                  style={{ left: isFirst ? 2 : -9 }}
+                />
+              )}
+              {showRightLine && (
+                <div
+                  className="absolute top-0 right-0.5 h-full w-0.5 bg-blue-500 rounded-full z-30 pointer-events-none"
+                />
+              )}
               <PlayerCard player={player} dispatch={dispatch} />
             </div>
           );
