@@ -123,6 +123,20 @@ export function appReducer(state, action) {
       };
     }
 
+    case 'player/reorder': {
+      const { from, to } = action.payload;
+      if (from === to || from == null || to == null) return state;
+      const players = [...state.players];
+      const [moved] = players.splice(from, 1);
+      players.splice(to, 0, moved);
+      return { ...state, players };
+    }
+
+    case 'players/sortByScore': {
+      const players = [...state.players].sort((a, b) => b.score - a.score);
+      return { ...state, players };
+    }
+
     case 'scores/reset': {
       return {
         ...state,
