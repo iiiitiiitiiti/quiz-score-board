@@ -1,4 +1,4 @@
-import { initialState, clampIndex } from './initialState.js';
+import { initialState, clampIndex, QUESTION_PLACEHOLDER_INDEX } from './initialState.js';
 
 function applyScore(players, playerId, score) {
   let found = false;
@@ -163,7 +163,7 @@ export function appReducer(state, action) {
       return {
         ...state,
         questions: action.payload.questions,
-        currentIndex: -1,
+        currentIndex: QUESTION_PLACEHOLDER_INDEX,
         ui: { ...state.ui, importError: '' },
       };
     }

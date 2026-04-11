@@ -1,3 +1,10 @@
+// questions がインポート済みだがまだ問題を表示していない状態を表す sentinel 値
+export const QUESTION_PLACEHOLDER_INDEX = -1;
+
+export function isQuestionPlaceholder(index) {
+  return index === QUESTION_PLACEHOLDER_INDEX;
+}
+
 export const initialState = {
   title: 'クイズ得点板',
   mode: 'score', // 'score' | 'circle-cross'
@@ -17,5 +24,5 @@ export const initialState = {
 
 export function clampIndex(index, questions) {
   if (questions.length === 0) return 0;
-  return Math.min(Math.max(index, -1), questions.length - 1);
+  return Math.min(Math.max(index, QUESTION_PLACEHOLDER_INDEX), questions.length - 1);
 }
