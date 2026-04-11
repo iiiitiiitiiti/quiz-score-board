@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Upload, Undo2, Redo2, RotateCcw, Trash2, ArrowDownUp } from 'lucide-react';
+import { Upload, Undo2, Redo2, RotateCcw, Trash2 } from 'lucide-react';
 import { parseQuestionsCsv } from '../lib/csv.js';
 import AddPlayerForm from './AddPlayerForm.jsx';
 
@@ -58,16 +58,6 @@ export default function Toolbar({ state, dispatch }) {
       </button>
 
       <AddPlayerForm dispatch={dispatch} />
-
-      <button
-        onClick={() => dispatch({ type: 'players/sortByScore' })}
-        disabled={state.players.length === 0}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        title="得点が高い順に並び替え"
-      >
-        <ArrowDownUp size={16} />
-        <span className="hidden sm:inline">得点順</span>
-      </button>
 
       <div className="flex items-center gap-1 ml-auto">
         <button
