@@ -12,10 +12,11 @@ export default function PlayerCard({ player, dispatch }) {
   };
 
   return (
-    <div className="group relative bg-white rounded-2xl shadow-md border border-slate-200 p-5 flex flex-col items-center gap-3 transition-shadow hover:shadow-lg">
+    <div className="group relative bg-white rounded-2xl shadow-md border border-slate-200 p-5 flex flex-col items-center gap-2 transition-shadow hover:shadow-lg">
+      {/* 削除ボタン */}
       <button
         onClick={handleRemove}
-        className="absolute top-2 right-2 p-1 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+        className="absolute top-2 right-2 p-1 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all z-20"
         aria-label={`${player.name} を削除`}
       >
         <Trash2 size={14} />
@@ -29,17 +30,18 @@ export default function PlayerCard({ player, dispatch }) {
         {player.score}
       </p>
 
-      <div className="flex gap-2 w-full opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* 増減ボタン: ホバー時にオーバーレイ表示（余白なし） */}
+      <div className="absolute inset-0 rounded-2xl flex gap-2 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
         <button
           onClick={() => handleScore(-1)}
-          className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-sm transition-colors active:scale-95"
+          className="flex-1 flex items-center justify-center py-2 rounded-xl bg-slate-200/95 hover:bg-slate-300 text-slate-700 font-semibold text-sm transition-colors active:scale-95"
           aria-label={`${player.name} のスコアを減らす`}
         >
           -1
         </button>
         <button
           onClick={() => handleScore(1)}
-          className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors active:scale-95"
+          className="flex-1 flex items-center justify-center py-2 rounded-xl bg-blue-600/95 hover:bg-blue-700 text-white font-semibold text-sm transition-colors active:scale-95"
           aria-label={`${player.name} のスコアを増やす`}
         >
           +1

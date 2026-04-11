@@ -1,4 +1,5 @@
 export const initialState = {
+  title: 'クイズ得点板',
   players: [],
   // [{ id: string, name: string, score: number }]
   questions: [],
@@ -14,5 +15,5 @@ export const initialState = {
 
 export function clampIndex(index, questions) {
   if (questions.length === 0) return 0;
-  return Math.min(Math.max(index, 0), questions.length - 1);
+  return Math.min(Math.max(index, -1), questions.length - 1);
 }
