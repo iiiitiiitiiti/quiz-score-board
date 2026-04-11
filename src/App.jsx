@@ -5,10 +5,12 @@ import ProblemArea from './components/ProblemArea.jsx';
 import ScoreBoard from './components/ScoreBoard.jsx';
 import Toolbar from './components/Toolbar.jsx';
 import ErrorBanner from './components/ErrorBanner.jsx';
+import HelpModal from './components/HelpModal.jsx';
 
 function App() {
   const [state, rawDispatch] = useReducer(appReducer, undefined, loadState);
   const [editingTitle, setEditingTitle] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   // app/clear 時は localStorage も削除する
   const dispatch = (action) => {
@@ -23,9 +25,10 @@ function App() {
   }, [state]);
 
   return (
+    <>
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <header className="mb-6">
+        <header className="mb-6 flex items-center justify-between">
           {editingTitle ? (
             <input
               className="text-2xl font-bold text-slate-800 tracking-tight bg-transparent border-b-2 border-blue-400 outline-none w-full max-w-sm"
@@ -46,6 +49,14 @@ function App() {
               {state.title || 'クイズ得点板'}
             </h1>
           )}
+          <button
+            onClick={() => setShowHelp(true)}
+            className="ml-4 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 hover:text-slate-700 transition-colors shrink-0"
+            title="使い方を見る"
+            aria-label="使い方"
+          >
+            ?
+          </button>
         </header>
 
         {state.ui.importError && (
@@ -76,6 +87,9 @@ function App() {
         </div>
       </div>
     </div>
+
+    {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+    </>
   );
 }
 
