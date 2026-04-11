@@ -1,6 +1,6 @@
 import { Lock, LockOpen, Trash2 } from 'lucide-react';
 
-function PlayerCardShell({ player, locked, onRemove, onToggleLock, children, actionButtons }) {
+function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, children, actionButtons }) {
   return (
     <div className={`group relative bg-white rounded-2xl shadow-md border p-5 flex flex-col items-center gap-2 transition-shadow hover:shadow-lg ${locked ? 'border-slate-400 opacity-70 grayscale' : 'border-slate-200'}`}>
       {/* LOCKEDウォーターマーク */}
@@ -12,13 +12,15 @@ function PlayerCardShell({ player, locked, onRemove, onToggleLock, children, act
         </div>
       )}
 
-      <button
-        onClick={onRemove}
-        className="absolute top-2 right-2 p-1 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all z-20"
-        aria-label={`${player.name} を削除`}
-      >
-        <Trash2 size={14} />
-      </button>
+      {!isSorting && (
+        <button
+          onClick={onRemove}
+          className="absolute top-2 right-2 p-1 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all z-20"
+          aria-label={`${player.name} を削除`}
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
 
       <p className="text-sm font-semibold text-slate-600 text-center break-words w-full px-4 leading-snug">
         {player.name}
@@ -26,26 +28,28 @@ function PlayerCardShell({ player, locked, onRemove, onToggleLock, children, act
 
       {children}
 
-      <div className="absolute inset-0 rounded-2xl flex flex-col gap-2 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-        {!locked && actionButtons}
-        <button
-          onClick={onToggleLock}
-          className={`flex items-center justify-center gap-1 py-1.5 rounded-xl text-xs font-semibold transition-colors active:scale-95 ${
-            locked
-              ? 'flex-1 bg-amber-500/95 hover:bg-amber-600 text-white'
-              : 'bg-slate-600/80 hover:bg-slate-700 text-white'
-          }`}
-          aria-label={locked ? `${player.name} のロックを解除` : `${player.name} をロック`}
-        >
-          {locked ? <LockOpen size={13} /> : <Lock size={13} />}
-          {locked ? 'ロック解除' : 'ロック'}
-        </button>
-      </div>
+      {!isSorting && (
+        <div className="absolute inset-0 rounded-2xl flex flex-col gap-2 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          {!locked && actionButtons}
+          <button
+            onClick={onToggleLock}
+            className={`flex items-center justify-center gap-1 py-1.5 rounded-xl text-xs font-semibold transition-colors active:scale-95 ${
+              locked
+                ? 'flex-1 bg-amber-500/95 hover:bg-amber-600 text-white'
+                : 'bg-slate-600/80 hover:bg-slate-700 text-white'
+            }`}
+            aria-label={locked ? `${player.name} のロックを解除` : `${player.name} をロック`}
+          >
+            {locked ? <LockOpen size={13} /> : <Lock size={13} />}
+            {locked ? 'ロック解除' : 'ロック'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-export default function PlayerCard({ player, mode, dispatch }) {
+export default function PlayerCard({ player, mode, dispatch, isSorting }) {
   const locked = player.locked ?? false;
 
   const handleScore = (delta) => {
@@ -75,6 +79,7 @@ export default function PlayerCard({ player, mode, dispatch }) {
       <PlayerCardShell
         player={player}
         locked={locked}
+        isSorting={isSorting}
         onRemove={handleRemove}
         onToggleLock={handleToggleLock}
         actionButtons={
@@ -111,6 +116,7 @@ export default function PlayerCard({ player, mode, dispatch }) {
     <PlayerCardShell
       player={player}
       locked={locked}
+      isSorting={isSorting}
       onRemove={handleRemove}
       onToggleLock={handleToggleLock}
       actionButtons={

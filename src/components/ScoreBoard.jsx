@@ -167,7 +167,7 @@ export default function ScoreBoard({ players, mode, dispatch }) {
                   className="absolute top-0 right-0.5 h-full w-0.5 bg-blue-500 rounded-full z-30 pointer-events-none"
                 />
               )}
-              <PlayerCard player={player} mode={mode} dispatch={dispatch} />
+              <PlayerCard player={player} mode={mode} dispatch={dispatch} isSorting={sortedByScore} />
             </div>
           );
         })}
