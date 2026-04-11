@@ -11,7 +11,14 @@ export default function ScoreBoard({ players, mode, dispatch }) {
   const prevPositions = useRef({});
 
   const displayPlayers = sortedByScore
-    ? [...players].sort((a, b) => b.score - a.score)
+    ? [...players].sort((a, b) => {
+        if (mode === 'circle-cross') {
+          const correctDiff = (b.correct ?? 0) - (a.correct ?? 0);
+          if (correctDiff !== 0) return correctDiff;
+          return (a.wrong ?? 0) - (b.wrong ?? 0);
+        }
+        return b.score - a.score;
+      })
     : players;
 
   const handleSortToggle = () => {

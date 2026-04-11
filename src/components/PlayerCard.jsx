@@ -46,18 +46,18 @@ export default function PlayerCard({ player, mode, dispatch }) {
 
         <div className="absolute inset-0 rounded-2xl flex gap-2 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
           <button
-            onClick={() => handleCircle('wrong')}
-            className="flex-1 flex items-center justify-center py-2 rounded-xl bg-red-100/95 hover:bg-red-200 text-red-600 font-bold text-xl transition-colors active:scale-95"
-            aria-label={`${player.name} に✕`}
-          >
-            ✕
-          </button>
-          <button
             onClick={() => handleCircle('correct')}
             className="flex-1 flex items-center justify-center py-2 rounded-xl bg-emerald-500/95 hover:bg-emerald-600 text-white font-bold text-xl transition-colors active:scale-95"
             aria-label={`${player.name} に○`}
           >
             ○
+          </button>
+          <button
+            onClick={() => handleCircle('wrong')}
+            className="flex-1 flex items-center justify-center py-2 rounded-xl bg-red-100/95 hover:bg-red-200 text-red-600 font-bold text-xl transition-colors active:scale-95"
+            aria-label={`${player.name} に✕`}
+          >
+            ✕
           </button>
         </div>
       </div>
