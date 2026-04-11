@@ -10,8 +10,19 @@ function applyScore(players, playerId, score) {
   return found ? next : players;
 }
 
+function applyCircle(players, playerId, result, val) {
+  const field = result === 'correct' ? 'correct' : 'wrong';
+  return players.map((p) =>
+    p.id === playerId ? { ...p, [field]: val } : p
+  );
+}
+
 export function appReducer(state, action) {
   switch (action.type) {
+    case 'mode/set': {
+      return { ...state, mode: action.payload.mode };
+    }
+
     case 'player/add': {
       const name = String(action.payload.name ?? '').trim();
       if (!name) return state;
@@ -21,7 +32,7 @@ export function appReducer(state, action) {
         ...state,
         players: [
           ...state.players,
-          { id: crypto.randomUUID(), name, score: 0 },
+          { id: crypto.randomUUID(), name, score: 0, correct: 0, wrong: 0 },
         ],
       };
     }
@@ -68,31 +79,79 @@ export function appReducer(state, action) {
       };
     }
 
+    case 'circle/record': {
+      const { playerId, result } = action.payload; // result: 'correct' | 'wrong'
+      const player = state.players.find((p) => p.id === playerId);
+      if (!player) return state;
+
+      const field = result === 'correct' ? 'correct' : 'wrong';
+      const oldVal = player[field] ?? 0;
+      const newVal = oldVal + 1;
+
+      const players = state.players.map((p) =>
+        p.id === playerId ? { ...p, [field]: newVal } : p
+      );
+
+      const entry = {
+        type: 'circle/record',
+        playerId,
+        result,
+        oldVal,
+        newVal,
+        timestamp: Date.now(),
+      };
+
+      const history = state.history
+        .slice(0, state.historyIndex + 1)
+        .concat(entry);
+
+      return {
+        ...state,
+        players,
+        history,
+        historyIndex: history.length - 1,
+      };
+    }
+
     case 'history/undo': {
       if (state.historyIndex < 0) return state;
       const entry = state.history[state.historyIndex];
-      if (entry.type !== 'score/update') {
-        return { ...state, historyIndex: state.historyIndex - 1 };
+      if (entry.type === 'score/update') {
+        return {
+          ...state,
+          players: applyScore(state.players, entry.playerId, entry.oldScore),
+          historyIndex: state.historyIndex - 1,
+        };
       }
-      return {
-        ...state,
-        players: applyScore(state.players, entry.playerId, entry.oldScore),
-        historyIndex: state.historyIndex - 1,
-      };
+      if (entry.type === 'circle/record') {
+        return {
+          ...state,
+          players: applyCircle(state.players, entry.playerId, entry.result, entry.oldVal),
+          historyIndex: state.historyIndex - 1,
+        };
+      }
+      return { ...state, historyIndex: state.historyIndex - 1 };
     }
 
     case 'history/redo': {
       const nextIndex = state.historyIndex + 1;
       if (nextIndex >= state.history.length) return state;
       const entry = state.history[nextIndex];
-      if (entry.type !== 'score/update') {
-        return { ...state, historyIndex: nextIndex };
+      if (entry.type === 'score/update') {
+        return {
+          ...state,
+          players: applyScore(state.players, entry.playerId, entry.newScore),
+          historyIndex: nextIndex,
+        };
       }
-      return {
-        ...state,
-        players: applyScore(state.players, entry.playerId, entry.newScore),
-        historyIndex: nextIndex,
-      };
+      if (entry.type === 'circle/record') {
+        return {
+          ...state,
+          players: applyCircle(state.players, entry.playerId, entry.result, entry.newVal),
+          historyIndex: nextIndex,
+        };
+      }
+      return { ...state, historyIndex: nextIndex };
     }
 
     case 'title/update': {
@@ -140,7 +199,7 @@ export function appReducer(state, action) {
     case 'scores/reset': {
       return {
         ...state,
-        players: state.players.map((p) => ({ ...p, score: 0 })),
+        players: state.players.map((p) => ({ ...p, score: 0, correct: 0, wrong: 0 })),
         history: [],
         historyIndex: -1,
       };

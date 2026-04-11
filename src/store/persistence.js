@@ -5,7 +5,14 @@ const STORAGE_KEY = 'quiz-scoreboard:v1';
 function sanitizeStateForStorage(state) {
   return {
     title: typeof state.title === 'string' ? state.title : initialState.title,
-    players: Array.isArray(state.players) ? state.players : [],
+    mode: state.mode === 'circle-cross' ? 'circle-cross' : 'score',
+    players: Array.isArray(state.players)
+      ? state.players.map((p) => ({
+          ...p,
+          correct: typeof p.correct === 'number' ? p.correct : 0,
+          wrong: typeof p.wrong === 'number' ? p.wrong : 0,
+        }))
+      : [],
     questions: Array.isArray(state.questions) ? state.questions : [],
     currentIndex: Number.isInteger(state.currentIndex) ? state.currentIndex : 0,
     history: Array.isArray(state.history) ? state.history.slice(-500) : [],
