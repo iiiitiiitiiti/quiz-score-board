@@ -1,4 +1,4 @@
-import { Plus, Minus, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 export default function PlayerCard({ player, dispatch }) {
   const handleScore = (delta) => {
@@ -35,16 +35,14 @@ export default function PlayerCard({ player, dispatch }) {
           className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-sm transition-colors active:scale-95"
           aria-label={`${player.name} のスコアを減らす`}
         >
-          <Minus size={16} />
-          <span>-1</span>
+          -1
         </button>
         <button
           onClick={() => handleScore(1)}
           className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors active:scale-95"
           aria-label={`${player.name} のスコアを増やす`}
         >
-          <Plus size={16} />
-          <span>+1</span>
+          +1
         </button>
       </div>
     </div>
