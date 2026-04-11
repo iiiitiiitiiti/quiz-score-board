@@ -26,7 +26,7 @@ export default function ProblemArea({ questions, currentIndex, dispatch }) {
 
       <div className="flex gap-6">
         {/* 左カラム: 問題文 */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-[2] min-w-0">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">問題</p>
           <p className={`text-lg whitespace-pre-wrap leading-relaxed ${isPlaceholder ? 'text-slate-300 italic' : 'text-slate-800'}`}>
             {displayQuestion}
@@ -34,7 +34,7 @@ export default function ProblemArea({ questions, currentIndex, dispatch }) {
         </div>
 
         {/* 右カラム: 答えと備考 */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-[1] min-w-0">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">答え</p>
           <p className={`text-xl font-bold whitespace-pre-wrap leading-relaxed ${isPlaceholder ? 'text-blue-200 italic' : 'text-blue-700'}`}>
             {displayAnswer}
