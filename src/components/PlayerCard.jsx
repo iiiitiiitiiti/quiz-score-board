@@ -32,16 +32,12 @@ export default function PlayerCard({ player, mode, dispatch }) {
           {player.name}
         </p>
 
-        <div className="flex items-center gap-3 mt-1">
-          <div className="flex flex-col items-center">
-            <span className="text-3xl font-bold text-emerald-600 tabular-nums leading-none">{correct}</span>
-            <span className="text-xs text-emerald-500 font-medium mt-0.5">○</span>
-          </div>
-          <div className="w-px h-8 bg-slate-200" />
-          <div className="flex flex-col items-center">
-            <span className="text-3xl font-bold text-red-500 tabular-nums leading-none">{wrong}</span>
-            <span className="text-xs text-red-400 font-medium mt-0.5">✕</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold text-emerald-500 leading-none">○</span>
+          <span className="text-4xl font-bold text-emerald-600 tabular-nums leading-none">{correct}</span>
+          <div className="w-px h-7 bg-slate-200 mx-1" />
+          <span className="text-xl font-bold text-red-400 leading-none">✕</span>
+          <span className="text-4xl font-bold text-red-500 tabular-nums leading-none">{wrong}</span>
         </div>
 
         <div className="absolute inset-0 rounded-2xl flex gap-2 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
