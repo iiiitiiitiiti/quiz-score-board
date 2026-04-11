@@ -119,7 +119,7 @@ export default function ScoreBoard({ players, dispatch }) {
         </button>
       </div>
 
-      <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {displayPlayers.map((player, index) => {
           const isFirst = index === 0;
           const isLast = index === displayPlayers.length - 1;
