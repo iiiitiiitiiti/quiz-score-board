@@ -32,7 +32,7 @@ export default function PlayerCard({ player, mode, dispatch }) {
           {player.name}
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="h-12 flex items-center gap-2">
           <span className="text-xl font-bold text-emerald-500 leading-none">○</span>
           <span className="text-4xl font-bold text-emerald-600 tabular-nums leading-none">{correct}</span>
           <div className="w-px h-7 bg-slate-200 mx-1" />
