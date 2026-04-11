@@ -29,7 +29,7 @@ export default function PlayerCard({ player, dispatch }) {
         {player.score}
       </p>
 
-      <div className="flex gap-2 w-full">
+      <div className="flex gap-2 w-full opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={() => handleScore(-1)}
           className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-sm transition-colors active:scale-95"
