@@ -196,10 +196,20 @@ export function appReducer(state, action) {
       return { ...state, players };
     }
 
+    case 'player/toggleLock': {
+      const { id } = action.payload;
+      return {
+        ...state,
+        players: state.players.map((p) =>
+          p.id === id ? { ...p, locked: !p.locked } : p
+        ),
+      };
+    }
+
     case 'scores/reset': {
       return {
         ...state,
-        players: state.players.map((p) => ({ ...p, score: 0, correct: 0, wrong: 0 })),
+        players: state.players.map((p) => ({ ...p, score: 0, correct: 0, wrong: 0, locked: false })),
         history: [],
         historyIndex: -1,
       };
