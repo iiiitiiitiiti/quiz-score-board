@@ -1,9 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { isQuestionPlaceholder } from '../store/initialState.js';
 
 export default function ProblemArea({ questions, currentIndex, dispatch }) {
   if (questions.length === 0) return null;
 
-  const isPlaceholder = currentIndex === -1;
+  const isPlaceholder = isQuestionPlaceholder(currentIndex);
   const q = isPlaceholder ? null : questions[currentIndex];
   const isFirst = isPlaceholder;
   const isLast = currentIndex === questions.length - 1;

@@ -2,43 +2,24 @@ import { useState, useRef, useLayoutEffect } from 'react';
 import { ArrowDownUp } from 'lucide-react';
 import PlayerCard from './PlayerCard.jsx';
 
-export default function ScoreBoard({ players, mode, dispatch }) {
-  const dragFromRef = useRef(null);
-  const [dragFrom, setDragFrom] = useState(null);
-  const [insertAt, setInsertAt] = useState(null);
-  const [sortedByScore, setSortedByScore] = useState(false);
-  const gridRef = useRef(null);
+function useFlipAnimation(containerRef, trigger) {
   const prevPositions = useRef({});
 
-  const displayPlayers = sortedByScore
-    ? [...players].sort((a, b) => {
-        if (mode === 'circle-cross') {
-          const correctDiff = (b.correct ?? 0) - (a.correct ?? 0);
-          if (correctDiff !== 0) return correctDiff;
-          return (a.wrong ?? 0) - (b.wrong ?? 0);
-        }
-        return b.score - a.score;
-      })
-    : players;
-
-  const handleSortToggle = () => {
-    // FLIP - First: record current positions
-    if (gridRef.current) {
-      const cards = gridRef.current.querySelectorAll('[data-player-id]');
-      prevPositions.current = {};
-      cards.forEach((card) => {
+  const capture = () => {
+    const cards = containerRef.current?.querySelectorAll('[data-player-id]') ?? [];
+    prevPositions.current = Object.fromEntries(
+      [...cards].map((card) => {
         const rect = card.getBoundingClientRect();
-        prevPositions.current[card.dataset.playerId] = { x: rect.left, y: rect.top };
-      });
-    }
-    setSortedByScore((v) => !v);
+        return [card.dataset.playerId, { x: rect.left, y: rect.top }];
+      })
+    );
   };
 
   // FLIP - Last → Invert → Play
   useLayoutEffect(() => {
-    if (!gridRef.current || Object.keys(prevPositions.current).length === 0) return;
+    if (!containerRef.current || Object.keys(prevPositions.current).length === 0) return;
 
-    const cards = gridRef.current.querySelectorAll('[data-player-id]');
+    const cards = containerRef.current.querySelectorAll('[data-player-id]');
     cards.forEach((card) => {
       const id = card.dataset.playerId;
       const old = prevPositions.current[id];
@@ -68,7 +49,35 @@ export default function ScoreBoard({ players, mode, dispatch }) {
     });
 
     prevPositions.current = {};
-  }, [sortedByScore]);
+  }, [trigger]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return { capture };
+}
+
+export default function ScoreBoard({ players, mode, dispatch }) {
+  const dragFromRef = useRef(null);
+  const [dragFrom, setDragFrom] = useState(null);
+  const [insertAt, setInsertAt] = useState(null);
+  const [sortedByScore, setSortedByScore] = useState(false);
+  const gridRef = useRef(null);
+  const { capture } = useFlipAnimation(gridRef, sortedByScore);
+
+  const displayPlayers = sortedByScore
+    ? [...players].sort((a, b) => {
+        if (mode === 'circle-cross') {
+          const correctDiff = (b.correct ?? 0) - (a.correct ?? 0);
+          if (correctDiff !== 0) return correctDiff;
+          return (a.wrong ?? 0) - (b.wrong ?? 0);
+        }
+        return b.score - a.score;
+      })
+    : players;
+
+  const handleSortToggle = () => {
+    // FLIP - First: record current positions before state update
+    capture();
+    setSortedByScore((v) => !v);
+  };
 
   if (players.length === 0) {
     return (
