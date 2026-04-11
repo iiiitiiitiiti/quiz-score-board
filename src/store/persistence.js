@@ -4,6 +4,7 @@ const STORAGE_KEY = 'quiz-scoreboard:v1';
 
 function sanitizeStateForStorage(state) {
   return {
+    title: typeof state.title === 'string' ? state.title : initialState.title,
     players: Array.isArray(state.players) ? state.players : [],
     questions: Array.isArray(state.questions) ? state.questions : [],
     currentIndex: Number.isInteger(state.currentIndex) ? state.currentIndex : 0,
@@ -24,7 +25,7 @@ export function loadState() {
       ...initialState,
       ...safe,
       currentIndex: Math.min(
-        safe.currentIndex,
+        Math.max(safe.currentIndex, safe.questions.length > 0 ? -1 : 0),
         Math.max(0, safe.questions.length - 1)
       ),
       historyIndex: Math.min(safe.historyIndex, safe.history.length - 1),

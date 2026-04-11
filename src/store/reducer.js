@@ -95,11 +95,16 @@ export function appReducer(state, action) {
       };
     }
 
+    case 'title/update': {
+      const title = String(action.payload.title ?? '').trimEnd();
+      return { ...state, title };
+    }
+
     case 'questions/import': {
       return {
         ...state,
         questions: action.payload.questions,
-        currentIndex: 0,
+        currentIndex: -1,
         ui: { ...state.ui, importError: '' },
       };
     }
