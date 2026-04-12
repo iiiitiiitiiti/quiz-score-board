@@ -168,6 +168,15 @@ export function appReducer(state, action) {
       };
     }
 
+    case 'questions/clear': {
+      return {
+        ...state,
+        questions: [],
+        currentIndex: 0,
+        ui: { ...state.ui, importError: '' },
+      };
+    }
+
     case 'question/next': {
       return {
         ...state,

@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { isQuestionPlaceholder } from '../store/initialState.js';
 
 export default function ProblemArea({ questions, currentIndex, dispatch }) {
@@ -20,9 +20,22 @@ export default function ProblemArea({ questions, currentIndex, dispatch }) {
         <span className="text-xs font-semibold text-slate-400 tracking-widest uppercase">
           No. {displayNo}
         </span>
-        <span className="text-xs text-slate-400">
-          {isPlaceholder ? `0 / ${questions.length}` : `${currentIndex + 1} / ${questions.length}`}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-400">
+            {isPlaceholder ? `0 / ${questions.length}` : `${currentIndex + 1} / ${questions.length}`}
+          </span>
+          <button
+            onClick={() => {
+              if (window.confirm('読み込んだ問題データを消去しますか？')) {
+                dispatch({ type: 'questions/clear' });
+              }
+            }}
+            className="p-0.5 rounded text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-colors"
+            title="問題データを消去"
+          >
+            <X size={12} />
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-6 h-36 overflow-hidden">
