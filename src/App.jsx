@@ -6,11 +6,13 @@ import ScoreBoard from './components/ScoreBoard.jsx';
 import Toolbar from './components/Toolbar.jsx';
 import ErrorBanner from './components/ErrorBanner.jsx';
 import HelpModal from './components/HelpModal.jsx';
+import WinnerOverlay from './components/WinnerOverlay.jsx';
 
 function App() {
   const [state, rawDispatch] = useReducer(appReducer, undefined, loadState);
   const [editingTitle, setEditingTitle] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [winner, setWinner] = useState(null);
 
   // app/clear 時は localStorage も削除する
   const dispatch = (action) => {
@@ -83,12 +85,13 @@ function App() {
             <Toolbar state={state} dispatch={dispatch} />
           </div>
 
-          <ScoreBoard players={state.players} mode={state.mode} dispatch={dispatch} />
+          <ScoreBoard players={state.players} mode={state.mode} dispatch={dispatch} onWinner={setWinner} />
         </div>
       </div>
     </div>
 
     {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+    {winner && <WinnerOverlay winner={winner} mode={state.mode} onClose={() => setWinner(null)} />}
     </>
   );
 }
