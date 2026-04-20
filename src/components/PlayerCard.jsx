@@ -1,6 +1,6 @@
-import { Lock, LockOpen, Trash2 } from 'lucide-react';
+import { Lock, LockOpen, Trash2, Trophy } from 'lucide-react';
 
-function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, children, actionButtons }) {
+function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, onWinner, children, actionButtons }) {
   return (
     <div className={`group relative bg-white rounded-2xl shadow-md border p-5 flex flex-col items-center gap-2 transition-shadow hover:shadow-lg ${locked ? 'border-slate-400 opacity-70 grayscale' : 'border-slate-200'}`}>
       {/* LOCKEDウォーターマーク */}
@@ -31,25 +31,35 @@ function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, ch
       {!isSorting && (
         <div className="absolute inset-0 rounded-2xl flex flex-col gap-2 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
           {!locked && actionButtons}
-          <button
-            onClick={onToggleLock}
-            className={`flex items-center justify-center gap-1 py-1.5 rounded-xl text-xs font-semibold transition-colors active:scale-95 ${
-              locked
-                ? 'flex-1 bg-amber-500/95 hover:bg-amber-600 text-white'
-                : 'bg-slate-600/80 hover:bg-slate-700 text-white'
-            }`}
-            aria-label={locked ? `${player.name} のロックを解除` : `${player.name} をロック`}
-          >
-            {locked ? <LockOpen size={13} /> : <Lock size={13} />}
-            {locked ? 'ロック解除' : 'ロック'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onToggleLock}
+              className={`flex items-center justify-center gap-1 py-1.5 rounded-xl text-xs font-semibold transition-colors active:scale-95 flex-1 ${
+                locked
+                  ? 'bg-amber-500/95 hover:bg-amber-600 text-white'
+                  : 'bg-slate-600/80 hover:bg-slate-700 text-white'
+              }`}
+              aria-label={locked ? `${player.name} のロックを解除` : `${player.name} をロック`}
+            >
+              {locked ? <LockOpen size={13} /> : <Lock size={13} />}
+              {locked ? 'ロック解除' : 'ロック'}
+            </button>
+            <button
+              onClick={onWinner}
+              className="flex items-center justify-center gap-1 py-1.5 px-2.5 rounded-xl text-xs font-semibold bg-yellow-400/90 hover:bg-yellow-500 text-yellow-900 transition-colors active:scale-95"
+              aria-label={`${player.name} を優勝者に設定`}
+              title="優勝確定"
+            >
+              <Trophy size={13} />
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-export default function PlayerCard({ player, mode, dispatch, isSorting }) {
+export default function PlayerCard({ player, mode, dispatch, isSorting, onWinner }) {
   const locked = player.locked ?? false;
 
   const handleScore = (delta) => {
@@ -82,6 +92,7 @@ export default function PlayerCard({ player, mode, dispatch, isSorting }) {
         isSorting={isSorting}
         onRemove={handleRemove}
         onToggleLock={handleToggleLock}
+        onWinner={onWinner}
         actionButtons={
           <div className="flex gap-2 flex-1">
             <button
@@ -119,6 +130,7 @@ export default function PlayerCard({ player, mode, dispatch, isSorting }) {
       isSorting={isSorting}
       onRemove={handleRemove}
       onToggleLock={handleToggleLock}
+      onWinner={onWinner}
       actionButtons={
         <div className="flex gap-2 flex-1">
           <button
