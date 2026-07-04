@@ -41,7 +41,12 @@ export function appReducer(state, action) {
       const playerId = action.payload.id;
       const players = state.players.filter((p) => p.id !== playerId);
       const history = state.history.filter((h) => h.playerId !== playerId);
-      const historyIndex = Math.min(state.historyIndex, history.length - 1);
+      // historyIndex は「現在位置以前で何件消えたか」の分だけ前にずらす
+      // （長さでクランプするだけだと undo 途中の削除で redo 位置が壊れる）
+      const removedUpToIndex = state.history
+        .slice(0, state.historyIndex + 1)
+        .filter((h) => h.playerId === playerId).length;
+      const historyIndex = state.historyIndex - removedUpToIndex;
       return { ...state, players, history, historyIndex };
     }
 
