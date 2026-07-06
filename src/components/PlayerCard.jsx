@@ -1,8 +1,9 @@
 import { Lock, LockOpen, Trash2, Trophy } from 'lucide-react';
 
+// 解答者席パネル: 名前 → 電光数字 → 常時表示の操作ボタン、の縦構成
 function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, onWinner, children, actionButtons }) {
   return (
-    <div className={`group relative bg-white rounded-2xl shadow-md border p-5 flex flex-col items-center gap-2 transition-shadow hover:shadow-lg ${locked ? 'border-slate-400 opacity-70 grayscale' : 'border-slate-200'}`}>
+    <div className={`relative bg-panel rounded-2xl border p-4 pt-2 flex flex-col items-center gap-2 transition-colors ${locked ? 'border-ink-dim/50 opacity-60 grayscale' : 'border-panel-edge'}`}>
       {/* LOCKEDウォーターマーク */}
       {locked && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 rounded-2xl overflow-hidden">
@@ -12,49 +13,45 @@ function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, on
         </div>
       )}
 
+      {/* 管理アイコン列: ロック・優勝・削除 */}
       {!isSorting && (
-        <button
-          onClick={onRemove}
-          className="absolute top-2 right-2 p-1 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all z-20"
-          aria-label={`${player.name} を削除`}
-        >
-          <Trash2 size={14} />
-        </button>
+        <div className="w-full flex justify-end gap-0.5">
+          <button
+            onClick={onToggleLock}
+            className={`p-1.5 rounded-lg transition-colors ${
+              locked ? 'text-lamp hover:bg-lamp/15' : 'text-ink-dim hover:text-ink hover:bg-panel-edge'
+            }`}
+            aria-label={locked ? `${player.name} のロックを解除` : `${player.name} をロック`}
+            title={locked ? 'ロック解除' : 'ロック'}
+          >
+            {locked ? <LockOpen size={14} /> : <Lock size={14} />}
+          </button>
+          <button
+            onClick={onWinner}
+            className="p-1.5 rounded-lg text-ink-dim hover:text-lamp hover:bg-lamp/15 transition-colors"
+            aria-label={`${player.name} を優勝者に設定`}
+            title="優勝確定"
+          >
+            <Trophy size={14} />
+          </button>
+          <button
+            onClick={onRemove}
+            className="p-1.5 rounded-lg text-ink-dim hover:text-ng hover:bg-ng/15 transition-colors"
+            aria-label={`${player.name} を削除`}
+            title="削除"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       )}
 
-      <p className="text-sm font-semibold text-slate-600 text-center break-words w-full px-4 leading-snug">
+      <p className="text-sm font-semibold text-ink text-center break-words w-full px-2 leading-snug">
         {player.name}
       </p>
 
       {children}
 
-      {!isSorting && (
-        <div className="absolute inset-0 rounded-2xl flex flex-col gap-2 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-          {!locked && actionButtons}
-          <div className="flex gap-2">
-            <button
-              onClick={onToggleLock}
-              className={`flex items-center justify-center gap-1 py-1.5 rounded-xl text-xs font-semibold transition-colors active:scale-95 flex-1 ${
-                locked
-                  ? 'bg-amber-500/95 hover:bg-amber-600 text-white'
-                  : 'bg-slate-600/80 hover:bg-slate-700 text-white'
-              }`}
-              aria-label={locked ? `${player.name} のロックを解除` : `${player.name} をロック`}
-            >
-              {locked ? <LockOpen size={13} /> : <Lock size={13} />}
-              {locked ? 'ロック解除' : 'ロック'}
-            </button>
-            <button
-              onClick={onWinner}
-              className="flex items-center justify-center gap-1 py-1.5 px-2.5 rounded-xl text-xs font-semibold bg-yellow-400/90 hover:bg-yellow-500 text-yellow-900 transition-colors active:scale-95"
-              aria-label={`${player.name} を優勝者に設定`}
-              title="優勝確定"
-            >
-              <Trophy size={13} />
-            </button>
-          </div>
-        </div>
-      )}
+      {!isSorting && <div className="w-full mt-1">{actionButtons}</div>}
     </div>
   );
 }
@@ -94,17 +91,19 @@ export default function PlayerCard({ player, mode, dispatch, isSorting, onWinner
         onToggleLock={handleToggleLock}
         onWinner={onWinner}
         actionButtons={
-          <div className="flex gap-2 flex-1">
+          <div className="flex gap-2">
             <button
               onClick={() => handleCircle('correct')}
-              className="flex-1 flex items-center justify-center py-2 rounded-xl bg-emerald-500/95 hover:bg-emerald-600 text-white font-bold text-xl transition-colors active:scale-95"
+              disabled={locked}
+              className="flex-1 flex items-center justify-center py-2 rounded-xl bg-ok/15 hover:bg-ok/30 text-ok font-bold text-xl border border-ok/40 transition-colors active:scale-95 disabled:cursor-not-allowed"
               aria-label={`${player.name} に○`}
             >
               ○
             </button>
             <button
               onClick={() => handleCircle('wrong')}
-              className="flex-1 flex items-center justify-center py-2 rounded-xl bg-red-100/95 hover:bg-red-200 text-red-600 font-bold text-xl transition-colors active:scale-95"
+              disabled={locked}
+              className="flex-1 flex items-center justify-center py-2 rounded-xl bg-ng/15 hover:bg-ng/30 text-ng font-bold text-xl border border-ng/40 transition-colors active:scale-95 disabled:cursor-not-allowed"
               aria-label={`${player.name} に✕`}
             >
               ✕
@@ -112,12 +111,12 @@ export default function PlayerCard({ player, mode, dispatch, isSorting, onWinner
           </div>
         }
       >
-        <div className="h-12 flex items-center gap-2">
-          <span className="text-xl font-bold text-emerald-500 leading-none">○</span>
-          <span className="text-4xl font-bold text-emerald-600 tabular-nums leading-none">{correct}</span>
-          <div className="w-px h-7 bg-slate-200 mx-1" />
-          <span className="text-xl font-bold text-red-400 leading-none">✕</span>
-          <span className="text-4xl font-bold text-red-500 tabular-nums leading-none">{wrong}</span>
+        <div className="h-14 flex items-center gap-2">
+          <span className="text-xl font-bold text-ok leading-none">○</span>
+          <span className="text-4xl font-black text-ok tabular-nums leading-none">{correct}</span>
+          <div className="w-px h-8 bg-panel-edge mx-1" />
+          <span className="text-xl font-bold text-ng leading-none">✕</span>
+          <span className="text-4xl font-black text-ng tabular-nums leading-none">{wrong}</span>
         </div>
       </PlayerCardShell>
     );
@@ -132,17 +131,19 @@ export default function PlayerCard({ player, mode, dispatch, isSorting, onWinner
       onToggleLock={handleToggleLock}
       onWinner={onWinner}
       actionButtons={
-        <div className="flex gap-2 flex-1">
+        <div className="flex gap-2">
           <button
             onClick={() => handleScore(-1)}
-            className="flex-1 flex items-center justify-center py-2 rounded-xl bg-slate-200/95 hover:bg-slate-300 text-slate-700 font-semibold text-sm transition-colors active:scale-95"
+            disabled={locked}
+            className="flex-1 flex items-center justify-center py-2 rounded-xl bg-panel-edge/60 hover:bg-panel-edge text-ink font-bold text-base transition-colors active:scale-95 disabled:cursor-not-allowed"
             aria-label={`${player.name} のスコアを減らす`}
           >
-            -1
+            −1
           </button>
           <button
             onClick={() => handleScore(1)}
-            className="flex-1 flex items-center justify-center py-2 rounded-xl bg-blue-600/95 hover:bg-blue-700 text-white font-semibold text-sm transition-colors active:scale-95"
+            disabled={locked}
+            className="flex-1 flex items-center justify-center py-2 rounded-xl bg-lamp hover:bg-lamp/85 text-stage font-bold text-base transition-colors active:scale-95 disabled:cursor-not-allowed"
             aria-label={`${player.name} のスコアを増やす`}
           >
             +1
@@ -150,7 +151,11 @@ export default function PlayerCard({ player, mode, dispatch, isSorting, onWinner
         </div>
       }
     >
-      <p className="text-5xl font-bold tabular-nums text-slate-800 leading-none">
+      {/* 電光数字: このカードの主役 */}
+      <p
+        className="h-14 flex items-center text-5xl font-black tabular-nums text-lamp leading-none"
+        style={{ textShadow: '0 0 24px rgba(255, 182, 39, 0.35)' }}
+      >
         {player.score}
       </p>
     </PlayerCardShell>

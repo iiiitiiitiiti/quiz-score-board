@@ -1,10 +1,22 @@
 @import "tailwindcss";
 
+/* 電光得点板パレット: 舞台紺の上にアンバーの数字を灯す */
+@theme {
+  --color-stage: #0f1a2e;
+  --color-panel: #1b2a44;
+  --color-panel-edge: #2c3e5e;
+  --color-lamp: #ffb627;
+  --color-ink: #f1f5f9;
+  --color-ink-dim: #8fa3c0;
+  --color-ok: #34d399;
+  --color-ng: #f87171;
+}
+
 body {
   font-family: 'Noto Sans JP', sans-serif;
   margin: 0;
-  background-color: #f8fafc;
-  color: #1e293b;
+  background-color: #0f1a2e;
+  color: #f1f5f9;
   -webkit-font-smoothing: antialiased;
 }
 

@@ -81,7 +81,7 @@ export default function ScoreBoard({ players, mode, dispatch, onWinner }) {
 
   if (players.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+      <div className="flex flex-col items-center justify-center py-20 text-ink-dim rounded-2xl border border-dashed border-panel-edge">
         <p className="text-lg font-medium">プレイヤーがいません</p>
         <p className="text-sm mt-1">「プレイヤーを追加」ボタンから追加してください</p>
       </div>
@@ -125,8 +125,8 @@ export default function ScoreBoard({ players, mode, dispatch, onWinner }) {
           onClick={handleSortToggle}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors ${
             sortedByScore
-              ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              ? 'bg-lamp text-stage hover:bg-lamp/85'
+              : 'bg-panel text-ink-dim hover:text-ink hover:bg-panel-edge'
           }`}
           title={sortedByScore ? '元の順序に戻す' : '得点が高い順に並び替え'}
         >
@@ -158,13 +158,13 @@ export default function ScoreBoard({ players, mode, dispatch, onWinner }) {
               {/* 挿入位置の縦線: カードとカードの間のgap中央に配置 */}
               {showLeftLine && (
                 <div
-                  className="absolute top-0 h-full w-0.5 bg-blue-500 rounded-full z-30 pointer-events-none"
+                  className="absolute top-0 h-full w-0.5 bg-lamp rounded-full z-30 pointer-events-none"
                   style={{ left: isFirst ? 2 : -9 }}
                 />
               )}
               {showRightLine && (
                 <div
-                  className="absolute top-0 right-0.5 h-full w-0.5 bg-blue-500 rounded-full z-30 pointer-events-none"
+                  className="absolute top-0 right-0.5 h-full w-0.5 bg-lamp rounded-full z-30 pointer-events-none"
                 />
               )}
               <PlayerCard player={player} mode={mode} dispatch={dispatch} isSorting={sortedByScore} onWinner={() => onWinner(player)} />
