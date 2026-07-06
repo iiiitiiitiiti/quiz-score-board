@@ -15,7 +15,7 @@ export default function ProblemArea({ questions, currentIndex, dispatch }) {
   const displayNote = isPlaceholder ? 'ここに備考を表示' : q.note;
 
   return (
-    <div className="bg-panel rounded-2xl border border-panel-edge p-6 mb-6">
+    <div className="bg-panel rounded-2xl border border-panel-edge shadow-md p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
         <span className="px-2.5 py-1 rounded-lg bg-lamp/15 text-lamp text-xs font-bold tracking-widest tabular-nums">
           No. {displayNo}

@@ -3,7 +3,7 @@ import { Lock, LockOpen, Trash2, Trophy } from 'lucide-react';
 // 解答者席パネル: 名前 → 電光数字 → 常時表示の操作ボタン、の縦構成
 function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, onWinner, children, actionButtons }) {
   return (
-    <div className={`relative bg-panel rounded-2xl border p-4 pt-2 flex flex-col items-center gap-2 transition-colors ${locked ? 'border-ink-dim/50 opacity-60 grayscale' : 'border-panel-edge'}`}>
+    <div className={`relative bg-panel rounded-2xl border shadow-md p-4 pt-2 flex flex-col items-center gap-2 transition-colors ${locked ? 'border-ink-dim/50 opacity-60 grayscale' : 'border-panel-edge'}`}>
       {/* LOCKEDウォーターマーク */}
       {locked && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 rounded-2xl overflow-hidden">
@@ -154,7 +154,7 @@ export default function PlayerCard({ player, mode, dispatch, isSorting, onWinner
       {/* 電光数字: このカードの主役 */}
       <p
         className="h-14 flex items-center text-5xl font-black tabular-nums text-lamp leading-none"
-        style={{ textShadow: '0 0 24px rgba(255, 182, 39, 0.35)' }}
+        style={{ textShadow: '0 0 24px rgba(217, 119, 6, 0.25)' }}
       >
         {player.score}
       </p>
