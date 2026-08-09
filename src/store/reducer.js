@@ -37,6 +37,18 @@ export function appReducer(state, action) {
       };
     }
 
+    case 'player/rename': {
+      const { id } = action.payload;
+      const name = String(action.payload.name ?? '').trim();
+      if (!name) return state;
+      const duplicate = state.players.some((p) => p.id !== id && p.name === name);
+      if (duplicate) return state;
+      return {
+        ...state,
+        players: state.players.map((p) => (p.id === id ? { ...p, name } : p)),
+      };
+    }
+
     case 'player/remove': {
       const playerId = action.payload.id;
       const players = state.players.filter((p) => p.id !== playerId);

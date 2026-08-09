@@ -1,7 +1,21 @@
+import { useState } from 'react';
 import { Lock, LockOpen, Trash2, Trophy } from 'lucide-react';
 
 // 解答者席パネル: 名前 → 電光数字 → 常時表示の操作ボタン、の縦構成
-function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, onWinner, children, actionButtons }) {
+function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, onWinner, onRename, children, actionButtons }) {
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState('');
+
+  const startEditName = () => {
+    setDraftName(player.name);
+    setEditingName(true);
+  };
+
+  const commitName = () => {
+    onRename(draftName);
+    setEditingName(false);
+  };
+
   return (
     <div className={`relative bg-panel rounded-2xl border shadow-md p-4 pt-2 flex flex-col items-center gap-2 transition-colors ${locked ? 'border-ink-dim/50 opacity-60 grayscale' : 'border-panel-edge'}`}>
       {/* LOCKEDウォーターマーク */}
@@ -45,9 +59,32 @@ function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, on
         </div>
       )}
 
-      <p className="text-sm font-semibold text-ink text-center break-words w-full px-2 leading-snug">
-        {player.name}
-      </p>
+      {editingName ? (
+        <input
+          autoFocus
+          type="text"
+          value={draftName}
+          maxLength={30}
+          onChange={(e) => setDraftName(e.target.value)}
+          onBlur={commitName}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) commitName();
+            if (e.key === 'Escape') setEditingName(false);
+          }}
+          // 親カードが draggable のため、dragstart を潰さないと入力内のテキスト選択がドラッグに化ける
+          draggable
+          onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          className="text-sm font-semibold text-ink text-center w-full px-2 leading-snug bg-transparent border-b-2 border-lamp outline-none"
+        />
+      ) : (
+        <p
+          className="text-sm font-semibold text-ink text-center break-words w-full px-2 leading-snug cursor-pointer hover:text-lamp transition-colors"
+          onClick={startEditName}
+          title="クリックして名前を編集"
+        >
+          {player.name}
+        </p>
+      )}
 
       {children}
 
@@ -79,6 +116,10 @@ export default function PlayerCard({ player, mode, dispatch, isSorting, onWinner
     dispatch({ type: 'player/toggleLock', payload: { id: player.id } });
   };
 
+  const handleRename = (name) => {
+    dispatch({ type: 'player/rename', payload: { id: player.id, name } });
+  };
+
   if (mode === 'circle-cross') {
     const correct = player.correct ?? 0;
     const wrong = player.wrong ?? 0;
@@ -90,6 +131,7 @@ export default function PlayerCard({ player, mode, dispatch, isSorting, onWinner
         onRemove={handleRemove}
         onToggleLock={handleToggleLock}
         onWinner={onWinner}
+        onRename={handleRename}
         actionButtons={
           <div className="flex gap-2">
             <button
@@ -130,6 +172,7 @@ export default function PlayerCard({ player, mode, dispatch, isSorting, onWinner
       onRemove={handleRemove}
       onToggleLock={handleToggleLock}
       onWinner={onWinner}
+      onRename={handleRename}
       actionButtons={
         <div className="flex gap-2">
           <button
