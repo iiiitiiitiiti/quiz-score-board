@@ -74,11 +74,11 @@ function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, on
           // 親カードが draggable のため、dragstart を潰さないと入力内のテキスト選択がドラッグに化ける
           draggable
           onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          className="text-sm font-semibold text-ink text-center w-full px-2 leading-snug bg-transparent border-b-2 border-lamp outline-none"
+          className="text-lg font-semibold text-ink text-center w-full px-2 leading-snug bg-transparent border-b-2 border-lamp outline-none"
         />
       ) : (
         <p
-          className="text-sm font-semibold text-ink text-center break-words w-full px-2 leading-snug cursor-pointer hover:text-lamp transition-colors"
+          className="text-lg font-semibold text-ink text-center break-words w-full px-2 leading-snug cursor-pointer hover:text-lamp transition-colors"
           onClick={startEditName}
           title="クリックして名前を編集"
         >
