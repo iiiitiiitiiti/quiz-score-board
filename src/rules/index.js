@@ -9,6 +9,10 @@ import tenByTen from './tenByTen.js';
 import pass from './pass.js';
 import survival from './survival.js';
 import zaa from './zaa.js';
+import mnRest from './mnRest.js';
+import aotenjo from './aotenjo.js';
+import tenHits from './tenHits.js';
+import pointConvert from './pointConvert.js';
 import {
   PLAY_FIELDS,
   BASE_PLAY_VALUES,
@@ -17,11 +21,18 @@ import {
   FINISH_OUT,
   FINISH_VALUES,
   isActive,
+  isResting,
 } from './helpers.js';
 
-export { PLAY_FIELDS, BASE_PLAY_VALUES, FINISH_NONE, FINISH_WON, FINISH_OUT, FINISH_VALUES, isActive };
+export { PLAY_FIELDS, BASE_PLAY_VALUES, FINISH_NONE, FINISH_WON, FINISH_OUT, FINISH_VALUES, isActive, isResting };
 
-export const RULES = [freeScore, freeCircle, plusMinus, updown, mnCross, tenByTen, pass, survival, zaa];
+export const RULES = [
+  freeScore, freeCircle, plusMinus, updown, mnCross, tenByTen, pass, survival, zaa,
+  mnRest, aotenjo, tenHits, pointConvert,
+];
+
+// 押したボタンの種類。through（スルー）と convert（換算）は問題の数を使うルールだけ
+export const ANSWER_RESULTS = ['correct', 'wrong', 'through', 'convert'];
 
 export const DEFAULT_RULE_ID = freeScore.id;
 
@@ -66,15 +77,39 @@ export function initialPlayFields(rule) {
   return { ...BASE_PLAY_VALUES, ...(def.initialPlayer?.(rule.params) ?? {}) };
 }
 
-// 押された○✕をルールに渡し、変えたあとの全員と問題の数を返す。受け付けないときは null
-// 勝ち負けの決まった人の○✕は受け付けない（ロックは見ない。ボタン側で止める）
+// 問題数の上限（0 は無し）。上限のあるルールだけ params.limit を持つ
+export function questionLimit(rule) {
+  return getRule(rule.id).params.some((d) => d.key === 'limit') ? rule.params.limit : 0;
+}
+
+// 上限まで問題が終わったか。終わったら○✕・スルー・換算をすべて受け付けない
+export function isOver(rule, questionNo) {
+  const limit = questionLimit(rule);
+  return limit > 0 && questionNo >= limit;
+}
+
+// 押されたボタンをルールに渡し、変えたあとの全員と問題の数を返す。受け付けないときは null
+// 勝ち負けの決まった人の○✕・換算と、休み中の人の○✕は受け付けない（ロックは見ない。ボタン側で止める）
+// ○とスルーで問題が1つ進む。✕と換算では進まない
 export function applyAnswer(rule, players, questionNo, playerId, result) {
-  if (result !== 'correct' && result !== 'wrong') return null;
+  if (!ANSWER_RESULTS.includes(result)) return null;
+  const def = getRule(rule.id);
+  if (isOver(rule, questionNo)) return null;
+  if (result === 'through') {
+    return def.usesQuestions ? { players, questionNo: questionNo + 1 } : null;
+  }
+
   const me = players.find((p) => p.id === playerId);
   if (!me || !isActive(me)) return null;
 
-  const def = getRule(rule.id);
-  const next = def.answer(players, playerId, result, rule.params);
+  let next;
+  if (result === 'convert') {
+    // 換算は答えるわけではないので、休み中でもできる
+    next = def.convert?.(players, playerId, rule.params);
+  } else if (!isResting(me, questionNo)) {
+    next = def.answer(players, playerId, result, rule.params, { question: questionNo + 1 });
+  }
+  if (!next) return null;
 
   // 勝ち抜け・失格が決まった人に順番を付ける。同時に決まった人は同じ番号
   // 済んだ人を削除しても番号が重ならないよう、人数と付いている最大の番号の大きい方から続ける
@@ -108,7 +143,13 @@ export function comparePlayers(rule, a, b) {
   return getRule(rule.id).compare(a, b, rule.params);
 }
 
-export function playerView(rule, player, players) {
+// questionNo を渡すと、休み中の人に「休み あと○問」の札を足す
+export function playerView(rule, player, players, questionNo) {
   const v = getRule(rule.id).view(player, rule.params, players);
-  return { sub: null, badges: [], ...v };
+  const badges = [...(v.badges ?? [])];
+  if (questionNo != null && isActive(player) && isResting(player, questionNo)) {
+    const left = player.restUntil - (questionNo + 1);
+    badges.push({ label: left > 0 ? `休み あと${left}問` : '休み この問題まで', tone: 'ng' });
+  }
+  return { sub: null, ...v, badges };
 }

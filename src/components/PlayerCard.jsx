@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Lock, LockOpen, Trash2, Trophy } from 'lucide-react';
-import { getRule, playerView, FINISH_WON, FINISH_OUT } from '../rules/index.js';
+import { Coins, Lock, LockOpen, Trash2, Trophy } from 'lucide-react';
+import { getRule, playerView, isResting, isOver, FINISH_WON, FINISH_OUT } from '../rules/index.js';
 
 const BADGE_TONES = {
   lamp: 'bg-lamp/15 text-lamp border-lamp/40',
@@ -143,13 +143,16 @@ function ScoreDisplay({ view }) {
   );
 }
 
-export default function PlayerCard({ player, players, rule, dispatch, isSorting, onWinner }) {
+export default function PlayerCard({ player, players, rule, questionNo, dispatch, isSorting, onWinner }) {
   const locked = player.locked ?? false;
   const def = getRule(rule.id);
-  const view = playerView(rule, player, players);
+  const view = playerView(rule, player, players, questionNo);
   // 勝ち負けの決まった人は reducer でも受け付けない。ボタンも止めて見た目で分かるようにする
   const finished = player.finish === FINISH_WON || player.finish === FINISH_OUT;
-  const disabled = locked || finished;
+  // 問題数の上限に達したら全員止める。休み中は○✕だけ止め、換算はできる
+  const over = isOver(rule, questionNo);
+  const convertDisabled = locked || finished || over || player.stock <= 0;
+  const disabled = locked || finished || over || isResting(player, questionNo);
 
   const finishBadge =
     player.finish === FINISH_WON
@@ -161,6 +164,11 @@ export default function PlayerCard({ player, players, rule, dispatch, isSorting,
   const handleAnswer = (result) => {
     if (disabled) return;
     dispatch({ type: 'answer/record', payload: { playerId: player.id, result } });
+  };
+
+  const handleConvert = () => {
+    if (convertDisabled) return;
+    dispatch({ type: 'answer/record', payload: { playerId: player.id, result: 'convert' } });
   };
 
   const handleRemove = () => {
@@ -218,6 +226,22 @@ export default function PlayerCard({ player, players, rule, dispatch, isSorting,
       </div>
     );
 
+  // 換算のあるルール（ポイント換算）だけ、○✕の下に換算ボタンを出す
+  const buttons = def.convert ? (
+    <div className="flex flex-col gap-2">
+      {actionButtons}
+      <button
+        onClick={handleConvert}
+        disabled={convertDisabled}
+        className="flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-lamp/15 hover:bg-lamp/30 text-lamp font-bold text-sm border border-lamp/40 transition-colors active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+        aria-label={`${player.name} のためた○を点に換える`}
+      >
+        <Coins size={15} />
+        換算
+      </button>
+    </div>
+  ) : actionButtons;
+
   return (
     <PlayerCardShell
       player={player}
@@ -229,7 +253,7 @@ export default function PlayerCard({ player, players, rule, dispatch, isSorting,
       onToggleLock={handleToggleLock}
       onWinner={onWinner}
       onRename={handleRename}
-      actionButtons={actionButtons}
+      actionButtons={buttons}
     >
       <ScoreDisplay view={view} />
       <p className="h-5 text-sm text-ink-dim tabular-nums leading-5">{view.sub ?? ''}</p>

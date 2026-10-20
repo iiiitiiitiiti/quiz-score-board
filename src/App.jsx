@@ -5,6 +5,7 @@ import { loadState, saveState, clearStorage } from './store/persistence.js';
 import ProblemArea from './components/ProblemArea.jsx';
 import ScoreBoard from './components/ScoreBoard.jsx';
 import Toolbar from './components/Toolbar.jsx';
+import QuestionBar from './components/QuestionBar.jsx';
 import ErrorBanner from './components/ErrorBanner.jsx';
 import HelpModal from './components/HelpModal.jsx';
 import WinnerOverlay from './components/WinnerOverlay.jsx';
@@ -143,7 +144,9 @@ function App() {
           <Toolbar state={state} dispatch={dispatch} />
         </div>
 
-        <ScoreBoard players={state.players} rule={state.rule} dispatch={dispatch} onWinner={setWinner} />
+        <QuestionBar rule={state.rule} questionNo={state.questionNo} dispatch={dispatch} />
+
+        <ScoreBoard players={state.players} rule={state.rule} questionNo={state.questionNo} dispatch={dispatch} onWinner={setWinner} />
       </div>
     </div>
 

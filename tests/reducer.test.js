@@ -129,6 +129,34 @@ test('スコアリセットはルールの最初の値に戻し、ロックを�
   assert.equal(s.history.length, 0);
 });
 
+test('スルーと換算も履歴に積み、undo / redo で戻せる', () => {
+  let s = run(initialState, setRule('point-convert'), add('A'), add('B'));
+  s = press(s, 'A:o', 'A:o');
+  s = run(s, { type: 'answer/record', payload: { playerId: null, result: 'through' } });
+  assert.equal(s.questionNo, 3);
+  s = run(s, ans(s, 'A', 'convert'));
+  assert.equal(byName(s, 'A').score, 4);
+  assert.equal(s.history.length, 4);
+  s = run(s, UNDO);
+  assert.equal(byName(s, 'A').score, 0);
+  assert.equal(byName(s, 'A').stock, 2);
+  s = run(s, UNDO);
+  assert.equal(s.questionNo, 2);
+  s = run(s, REDO, REDO);
+  assert.equal(s.questionNo, 3);
+  assert.equal(byName(s, 'A').score, 4);
+});
+
+test('休みは undo で明ける', () => {
+  let s = run(initialState, setRule('m-rest', { rest: 2 }), add('A'));
+  s = press(s, 'A:x');
+  assert.equal(press(s, 'A:o'), s);
+  s = run(s, UNDO);
+  assert.equal(byName(s, 'A').restUntil, 0);
+  s = press(s, 'A:o');
+  assert.equal(byName(s, 'A').correct, 1);
+});
+
 test('履歴の途中から押すと先の履歴は捨てる', () => {
   let s = run(initialState, add('A'));
   s = press(s, 'A:o', 'A:o');

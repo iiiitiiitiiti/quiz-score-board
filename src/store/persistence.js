@@ -1,10 +1,9 @@
 import { initialState, QUESTION_PLACEHOLDER_INDEX } from './initialState.js';
-import { PLAY_FIELDS, FINISH_VALUES, initialPlayFields, normalizeRule, defaultRule } from '../rules/index.js';
+import { PLAY_FIELDS, FINISH_VALUES, ANSWER_RESULTS, initialPlayFields, normalizeRule, defaultRule } from '../rules/index.js';
 
 const STORAGE_KEY = 'quiz-scoreboard:v1';
 
 const HISTORY_LIMIT = 500;
-const ANSWER_RESULTS = ['correct', 'wrong', 'through', 'convert'];
 
 const isCount = (v) => Number.isInteger(v) && v >= 0;
 

@@ -55,7 +55,7 @@ function useFlipAnimation(containerRef, trigger) {
   return { capture };
 }
 
-export default function ScoreBoard({ players, rule, dispatch, onWinner }) {
+export default function ScoreBoard({ players, rule, questionNo, dispatch, onWinner }) {
   const dragFromRef = useRef(null);
   const [dragFrom, setDragFrom] = useState(null);
   const [insertAt, setInsertAt] = useState(null);
@@ -161,7 +161,7 @@ export default function ScoreBoard({ players, rule, dispatch, onWinner }) {
                   className="absolute top-0 right-0.5 h-full w-0.5 bg-lamp rounded-full z-30 pointer-events-none"
                 />
               )}
-              <PlayerCard player={player} players={players} rule={rule} dispatch={dispatch} isSorting={sortedByScore} onWinner={() => onWinner(player)} />
+              <PlayerCard player={player} players={players} rule={rule} questionNo={questionNo} dispatch={dispatch} isSorting={sortedByScore} onWinner={() => onWinner(player)} />
             </div>
           );
         })}

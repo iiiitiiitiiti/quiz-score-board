@@ -92,7 +92,7 @@ export function appReducer(state, action) {
     }
 
     case 'answer/record': {
-      const { playerId, result } = action.payload; // result: 'correct' | 'wrong'
+      const { playerId, result } = action.payload; // result: ANSWER_RESULTS のどれか。スルーは playerId が null
       const next = applyAnswer(state.rule, state.players, state.questionNo, playerId, result);
       if (!next) return state;
 
@@ -174,11 +174,6 @@ export function appReducer(state, action) {
       const players = [...state.players];
       const [moved] = players.splice(from, 1);
       players.splice(to, 0, moved);
-      return { ...state, players };
-    }
-
-    case 'players/sortByScore': {
-      const players = [...state.players].sort((a, b) => b.score - a.score);
       return { ...state, players };
     }
 

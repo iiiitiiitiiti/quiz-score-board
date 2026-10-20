@@ -1,7 +1,7 @@
 // ルールの関数が共通で使う小さな道具。index.js からも各ルールからも読むため別ファイルに置く
 
 // 勝ち負けに関わるプレイヤーの値。履歴の前後の値・リセット・sanitize はすべてこの一覧を使う
-// restUntil / stock / streak は後半（問題の数を使うルール）用。今は常に 0
+// restUntil / stock / streak は問題の数を使うルール用。ほかのルールでは常に 0
 export const PLAY_FIELDS = [
   'score',
   'correct',
@@ -49,4 +49,9 @@ export function finishWhere(players, finish, predicate) {
 export function outByWrong(players, maxWrong) {
   if (!(maxWrong > 0)) return players;
   return finishWhere(players, FINISH_OUT, (p) => p.wrong >= maxWrong);
+}
+
+// 休み中か。restUntil は「何問目まで休むか」、今の問題番号は questionNo + 1
+export function isResting(player, questionNo) {
+  return questionNo + 1 <= player.restUntil;
 }

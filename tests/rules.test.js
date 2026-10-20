@@ -15,12 +15,14 @@ function setup(id, names = ['A', 'B', 'C'], params = {}) {
   return { rule, players, questionNo: 0 };
 }
 
-// 押した順に適用する。受け付けられなかったら例外にする
+const MARKS = { o: 'correct', x: 'wrong', c: 'convert' };
+
+// 押した順に適用する。'A:o' は○、'A:x' は✕、'A:c' は換算、'T' はスルー。受け付けられなかったら例外にする
 function play(game, ...moves) {
   let { players, questionNo } = game;
   for (const move of moves) {
-    const [id, mark] = move.split(':');
-    const res = applyAnswer(game.rule, players, questionNo, id, mark === 'o' ? 'correct' : 'wrong');
+    const [id, mark] = move === 'T' ? [null, 't'] : move.split(':');
+    const res = applyAnswer(game.rule, players, questionNo, id, mark === 't' ? 'through' : MARKS[mark]);
     if (!res) throw new Error(`rejected: ${move}`);
     ({ players, questionNo } = res);
   }
@@ -203,6 +205,136 @@ test('ザー: 誤答数が上限で失格。誤答しても今の段階の○は
   assert.equal(get(g, 'A').score, 1);
   g = play(g, 'A:x', 'A:x');
   assert.equal(get(g, 'A').finish, 'out');
+});
+
+const rejected = (game, move) => {
+  const [id, mark] = move === 'T' ? [null, 't'] : move.split(':');
+  return applyAnswer(game.rule, game.players, game.questionNo, id, mark === 't' ? 'through' : MARKS[mark]) === null;
+};
+
+const badges = (game, id) => playerView(game.rule, get(game, id), game.players, game.questionNo).badges.map((b) => b.label);
+
+test('スルーは問題の数を使うルールだけ。問題が1つ進み、点は変わらない', () => {
+  const g = play(setup('m-rest'), 'T', 'T');
+  assert.equal(g.questionNo, 2);
+  assert.ok(g.players.every((p) => p.correct === 0 && p.wrong === 0));
+  assert.ok(rejected(setup('m-n'), 'T'));
+});
+
+test('m○n休: ✕の問題とその後の n 問は休み。休みが明けたら答えられる', () => {
+  // 第1問で A が✕ → 第1〜4問は答えられない
+  let g = play(setup('m-rest', ['A', 'B'], { rest: 3 }), 'A:x');
+  assert.equal(get(g, 'A').restUntil, 4);
+  assert.ok(rejected(g, 'A:o'));
+  assert.deepEqual(badges(g, 'A'), ['休み あと3問']);
+  g = play(g, 'B:o', 'T');
+  assert.deepEqual(badges(g, 'A'), ['休み あと1問']);
+  g = play(g, 'T');
+  assert.deepEqual(badges(g, 'A'), ['休み この問題まで']);
+  assert.ok(rejected(g, 'A:x'));
+  g = play(g, 'T', 'A:o');
+  assert.equal(get(g, 'A').correct, 1);
+  assert.deepEqual(badges(g, 'A'), []);
+});
+
+test('m○n休: 休みを増やす設定では1回目1問・2回目2問。○m個で勝ち抜け、誤答の上限で失格', () => {
+  let g = play(setup('m-rest', ['A', 'B'], { m: 2, restStyle: 'grow', maxWrong: 2 }), 'A:x');
+  assert.equal(get(g, 'A').restUntil, 2);
+  g = play(g, 'T', 'T', 'A:x');
+  assert.equal(get(g, 'A').restUntil, 5);
+  assert.equal(get(g, 'A').finish, 'out');
+  // 失格した人には休みの札を出さない
+  assert.deepEqual(badges(g, 'A'), []);
+  g = play(g, 'B:o', 'B:o');
+  assert.equal(get(g, 'B').finish, 'won');
+});
+
+test('青天井: ○は今の問題番号の点。✕は引く（減点しない設定もできる）', () => {
+  // 第1問 A○ +1 → 第2問 B✕ −2 → 第2問 A○ +2
+  let g = play(setup('aotenjo', ['A', 'B']), 'A:o', 'B:x', 'A:o');
+  assert.equal(get(g, 'A').score, 3);
+  assert.equal(get(g, 'B').score, -2);
+  g = play(setup('aotenjo', ['A', 'B'], { wrongMode: 'none' }), 'T', 'T', 'B:x');
+  assert.equal(get(g, 'B').score, 0);
+  assert.equal(get(g, 'B').wrong, 1);
+  // ✕でも休まないので、同じ第3問に答えられる
+  g = play(g, 'B:o');
+  assert.equal(get(g, 'B').score, 3);
+});
+
+test('青天井: 勝ち抜け点で勝ち抜け。問題数の上限で全部止まる', () => {
+  let g = play(setup('aotenjo', ['A', 'B'], { target: 3, limit: 3 }), 'A:o', 'A:o');
+  assert.equal(get(g, 'A').finish, 'won');
+  g = play(g, 'B:x', 'T');
+  assert.equal(g.questionNo, 3);
+  assert.ok(rejected(g, 'B:o'));
+  assert.ok(rejected(g, 'B:x'));
+  assert.ok(rejected(g, 'T'));
+});
+
+test('10hits: 連答2で+1・3で+2。ほかの人の○で連答が0に戻り、✕やスルーでは戻らない', () => {
+  let g = play(setup('10hits', ['A', 'B']), 'A:o', 'A:o', 'A:o');
+  assert.equal(get(g, 'A').streak, 3);
+  assert.equal(get(g, 'A').score, 3);
+  assert.equal(playerView(g.rule, get(g, 'A'), g.players).sub, '連答 3');
+  g = play(g, 'B:x', 'T', 'A:o');
+  assert.equal(get(g, 'A').streak, 4);
+  assert.equal(get(g, 'A').score, 6);
+  g = play(g, 'B:o');
+  assert.equal(get(g, 'A').streak, 0);
+  assert.equal(get(g, 'B').streak, 1);
+});
+
+test('10hits: ✕で連答0。休みは1回目1問・2回目2問。連答5で勝ち抜け', () => {
+  let g = play(setup('10hits', ['A', 'B']), 'A:o', 'A:x');
+  assert.equal(get(g, 'A').streak, 0);
+  assert.equal(get(g, 'A').restUntil, 3);
+  g = play(g, 'T', 'T', 'A:x');
+  assert.equal(get(g, 'A').restUntil, 6);
+  g = play(g, ...Array(5).fill('B:o'));
+  assert.equal(get(g, 'B').streak, 5);
+  assert.equal(get(g, 'B').finish, 'won');
+});
+
+test('10hits: 10点に達したら勝ち抜け', () => {
+  const g = play(setup('10hits', ['A', 'B'], { winStreak: 9 }), ...Array(5).fill('A:o'));
+  assert.equal(get(g, 'A').score, 10);
+  assert.equal(get(g, 'A').finish, 'won');
+});
+
+test('ポイント換算: ○をためて換算すると2乗の点。換算では問題が進まない', () => {
+  let g = play(setup('point-convert', ['A', 'B']), 'A:o', 'A:o', 'A:o');
+  assert.equal(playerView(g.rule, get(g, 'A'), g.players).sub, '○3（換えると9点）');
+  g = play(g, 'A:c');
+  assert.equal(get(g, 'A').score, 9);
+  assert.equal(get(g, 'A').stock, 0);
+  assert.equal(g.questionNo, 3);
+  // ためた○が0なら換算できない
+  assert.ok(rejected(g, 'A:c'));
+});
+
+test('ポイント換算: ✕はためた○を0にする。無いときは休み', () => {
+  let g = play(setup('point-convert', ['A', 'B']), 'A:o', 'A:x');
+  assert.equal(get(g, 'A').stock, 0);
+  assert.equal(get(g, 'A').restUntil, 0);
+  g = play(g, 'A:x');
+  assert.equal(get(g, 'A').restUntil, 5);
+  assert.ok(rejected(g, 'A:o'));
+});
+
+test('ポイント換算: 休み中でも換算できる', () => {
+  let g = play(setup('point-convert', ['A', 'B']), 'A:o', 'A:o');
+  g = { ...g, players: g.players.map((p) => (p.id === 'A' ? { ...p, restUntil: g.questionNo + 2 } : p)) };
+  assert.ok(rejected(g, 'A:o'));
+  g = play(g, 'A:c');
+  assert.equal(get(g, 'A').score, 4);
+});
+
+test('ポイント換算: 上限の問題数で終わり、換算もできない', () => {
+  const g = play(setup('point-convert', ['A', 'B'], { limit: 2 }), 'A:o', 'A:o');
+  assert.equal(g.questionNo, 2);
+  assert.ok(rejected(g, 'A:c'));
+  assert.equal(get(g, 'A').score, 0);
 });
 
 test('params はおかしな値を既定値で埋める', () => {

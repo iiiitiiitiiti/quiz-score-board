@@ -20,6 +20,8 @@
 - undo/redo は `history` 配列 + `historyIndex` 方式。entry は `answer/record` 1種類で、変わった人ごとの `PLAY_FIELDS` の前後の値（`changes`）と `questionNo` の前後を持つ。**プレイヤーに新しい欄を足してルールで変えるなら、`PLAY_FIELDS` と `persistence.js` の値の検査（`isValidPlayValue`）に足す**。元に戻せる操作を別の type で足すなら、entry の追加・`history/undo`・`history/redo`・`sanitizeHistoryEntry` の4箇所をセットで実装する（プレイヤー追加削除・並べ替え・改名・ロックは undo 対象外という設計判断）
 - 古い保存データの `mode` と `score/update`・`circle/record` の履歴は、読み込み時に `rule` と `answer/record` へ読み替える（`persistence.js`）。この読み替えは消さない
 - 勝ち抜け・失格（`finish`）が決まった人の○✕は `applyAnswer()` が受け付けない。ロックは reducer では見ず、ボタン側で止める（阻止やサバイバルの減点はロック中の人にも入る）
+- 問題の数を使うルールは `usesQuestions: true` を持ち、画面に「第n問」とスルー（`QuestionBar`）が出る。`applyAnswer()` の result は `ANSWER_RESULTS`（correct / wrong / through / convert）。スルーは `playerId: null` で問題を1つ進め、換算（ルールの `convert()`）は問題を進めず休み中でもできる。休み中（`isResting`: `questionNo + 1 <= restUntil`）の○✕と、`params.limit`（問題数の上限）に達したあとの操作は全部受け付けない。ボタンの無効化も同じ条件にそろえる
+- `playerView()` に `questionNo` を渡すと「休み あと○問」の札が付く
 - `app/clear` は reducer の外（App.jsx の dispatch ラッパー）で `clearStorage()` を呼んでいる。reducer に副作用を書かない
 - タイトル入力の Enter 確定は `e.nativeEvent.isComposing` チェック済み。**日本語 IME 変換確定の Enter を誤爆させない**ため、テキスト入力の keydown には必ずこのチェックを入れる
 - history は保存時に直近500件へ切り詰め（`slice(-500)`）
