@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { X } from 'lucide-react';
+import { playerView } from '../rules/index.js';
 
 function fire(particleRatio, opts) {
   confetti({
@@ -18,7 +19,7 @@ function launchConfetti() {
   fire(0.1,  { spread: 120, startVelocity: 45, colors: ['#FFD700', '#ADFF2F'] });
 }
 
-export default function WinnerOverlay({ winner, mode, onClose }) {
+export default function WinnerOverlay({ winner, players, rule, onClose }) {
   const hasLaunched = useRef(false);
 
   useEffect(() => {
@@ -30,10 +31,7 @@ export default function WinnerOverlay({ winner, mode, onClose }) {
     return () => clearTimeout(t);
   }, []);
 
-  const scoreDisplay =
-    mode === 'circle-cross'
-      ? `○ ${winner.correct ?? 0}  ✕ ${winner.wrong ?? 0}`
-      : `${winner.score} 点`;
+  const scoreDisplay = playerView(rule, winner, players).summary;
 
   return (
     <div

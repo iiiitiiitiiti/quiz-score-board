@@ -1,11 +1,14 @@
-import { useRef } from 'react';
-import { Upload } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Upload, SlidersHorizontal } from 'lucide-react';
 import { parseQuestionsCsv } from '../lib/csv.js';
+import { getRule } from '../rules/index.js';
 import AddPlayerForm from './AddPlayerForm.jsx';
+import RuleSettings from './RuleSettings.jsx';
 
-// 準備バー: 進行前のセットアップ操作（CSV・プレイヤー追加・モード切替）をまとめる
+// 準備バー: 進行前のセットアップ操作（CSV・プレイヤー追加・ルール設定）をまとめる
 export default function Toolbar({ state, dispatch }) {
   const fileInputRef = useRef(null);
+  const [showRules, setShowRules] = useState(false);
 
   const handleImportClick = () => {
     fileInputRef.current.value = '';
@@ -26,14 +29,8 @@ export default function Toolbar({ state, dispatch }) {
     }
   };
 
-  const isCircleCross = state.mode === 'circle-cross';
-
-  const handleModeToggle = () => {
-    dispatch({
-      type: 'mode/set',
-      payload: { mode: isCircleCross ? 'score' : 'circle-cross' },
-    });
-  };
+  // 履歴が空で問題も0問なら、確認なしで切り替える（docs/plan-rules.md「ルールを切り替えたときの扱い」）
+  const canSwitchFreely = state.history.length === 0 && state.questionNo === 0;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -55,26 +52,26 @@ export default function Toolbar({ state, dispatch }) {
         CSV インポート
       </button>
 
-      <div className="ml-auto flex items-center gap-1 rounded-xl bg-panel border border-panel-edge p-1" role="group" aria-label="得点モード切替">
-        <button
-          onClick={isCircleCross ? handleModeToggle : undefined}
-          className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-            !isCircleCross ? 'bg-lamp text-stage' : 'text-ink-dim hover:text-ink'
-          }`}
-          title="+1/-1 モード"
-        >
-          +1/-1
-        </button>
-        <button
-          onClick={!isCircleCross ? handleModeToggle : undefined}
-          className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-            isCircleCross ? 'bg-lamp text-stage' : 'text-ink-dim hover:text-ink'
-          }`}
-          title="○/✕ モード"
-        >
-          ○/✕
-        </button>
-      </div>
+      <button
+        onClick={() => setShowRules((v) => !v)}
+        aria-expanded={showRules}
+        className={`ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+          showRules ? 'bg-lamp text-stage border-lamp hover:bg-lamp/85' : 'bg-panel text-ink border-panel-edge hover:bg-panel-edge'
+        }`}
+        title="ルールを選ぶ"
+      >
+        <SlidersHorizontal size={16} />
+        ルール: {getRule(state.rule.id).name}
+      </button>
+
+      {showRules && (
+        <RuleSettings
+          rule={state.rule}
+          canSwitchFreely={canSwitchFreely}
+          dispatch={dispatch}
+          onClose={() => setShowRules(false)}
+        />
+      )}
     </div>
   );
 }

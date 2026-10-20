@@ -1,26 +1,55 @@
 import { initialState, clampIndex, QUESTION_PLACEHOLDER_INDEX } from './initialState.js';
+import { PLAY_FIELDS, applyAnswer, initialPlayFields, normalizeRule } from '../rules/index.js';
 
-function applyScore(players, playerId, score) {
-  let found = false;
-  const next = players.map((p) => {
-    if (p.id !== playerId) return p;
-    found = true;
-    return { ...p, score };
-  });
-  return found ? next : players;
+// 変わったプレイヤーの PLAY_FIELDS だけを前後の値で残す
+function diffPlayers(before, after) {
+  const beforeById = new Map(before.map((p) => [p.id, p]));
+  const changes = [];
+  for (const p of after) {
+    const old = beforeById.get(p.id);
+    if (!old) continue;
+    const b = {};
+    const a = {};
+    for (const key of PLAY_FIELDS) {
+      if (old[key] !== p[key]) {
+        b[key] = old[key];
+        a[key] = p[key];
+      }
+    }
+    if (Object.keys(a).length > 0) changes.push({ id: p.id, before: b, after: a });
+  }
+  return changes;
 }
 
-function applyCircle(players, playerId, result, val) {
-  const field = result === 'correct' ? 'correct' : 'wrong';
-  return players.map((p) =>
-    p.id === playerId ? { ...p, [field]: val } : p
-  );
+// undo は before、redo は after を書き戻す。今いないプレイヤーの分は無視する
+function applyEntry(state, entry, side) {
+  if (entry.type !== 'answer/record') return state;
+  const byId = new Map(entry.changes.map((c) => [c.id, c[side]]));
+  return {
+    ...state,
+    players: state.players.map((p) => (byId.has(p.id) ? { ...p, ...byId.get(p.id) } : p)),
+    questionNo: entry.questionNo[side],
+  };
+}
+
+function resetPlayFields(players, rule) {
+  const fields = initialPlayFields(rule);
+  return players.map((p) => ({ ...p, ...fields }));
 }
 
 export function appReducer(state, action) {
   switch (action.type) {
-    case 'mode/set': {
-      return { ...state, mode: action.payload.mode };
+    case 'rule/set': {
+      // 点数の意味が変わるため、PLAY_FIELDS・問題の数・履歴を戻す（確認は画面側で出す）
+      const rule = normalizeRule(action.payload);
+      return {
+        ...state,
+        rule,
+        players: resetPlayFields(state.players, rule),
+        questionNo: 0,
+        history: [],
+        historyIndex: -1,
+      };
     }
 
     case 'player/add': {
@@ -32,7 +61,7 @@ export function appReducer(state, action) {
         ...state,
         players: [
           ...state.players,
-          { id: crypto.randomUUID(), name, score: 0, correct: 0, wrong: 0 },
+          { id: crypto.randomUUID(), name, locked: false, ...initialPlayFields(state.rule) },
         ],
       };
     }
@@ -50,71 +79,29 @@ export function appReducer(state, action) {
     }
 
     case 'player/remove': {
+      // entry を消すと、その entry がほかの人に与えた変化まで消えて undo が食い違う。
+      // そのため entry は残し、消した人の changes だけ取り除く。historyIndex は触らない
       const playerId = action.payload.id;
       const players = state.players.filter((p) => p.id !== playerId);
-      const history = state.history.filter((h) => h.playerId !== playerId);
-      // historyIndex は「現在位置以前で何件消えたか」の分だけ前にずらす
-      // （長さでクランプするだけだと undo 途中の削除で redo 位置が壊れる）
-      const removedUpToIndex = state.history
-        .slice(0, state.historyIndex + 1)
-        .filter((h) => h.playerId === playerId).length;
-      const historyIndex = state.historyIndex - removedUpToIndex;
-      return { ...state, players, history, historyIndex };
-    }
-
-    case 'score/update': {
-      const { playerId, delta } = action.payload;
-      if (!Number.isFinite(delta) || delta === 0) return state;
-      const player = state.players.find((p) => p.id === playerId);
-      if (!player) return state;
-
-      const oldScore = player.score;
-      const newScore = oldScore + delta;
-
-      const players = state.players.map((p) =>
-        p.id === playerId ? { ...p, score: newScore } : p
+      const history = state.history.map((h) =>
+        h.type === 'answer/record'
+          ? { ...h, changes: h.changes.filter((c) => c.id !== playerId) }
+          : h
       );
-
-      const entry = {
-        type: 'score/update',
-        playerId,
-        oldScore,
-        newScore,
-        delta,
-        timestamp: Date.now(),
-      };
-
-      const history = state.history
-        .slice(0, state.historyIndex + 1)
-        .concat(entry);
-
-      return {
-        ...state,
-        players,
-        history,
-        historyIndex: history.length - 1,
-      };
+      return { ...state, players, history };
     }
 
-    case 'circle/record': {
+    case 'answer/record': {
       const { playerId, result } = action.payload; // result: 'correct' | 'wrong'
-      const player = state.players.find((p) => p.id === playerId);
-      if (!player) return state;
-
-      const field = result === 'correct' ? 'correct' : 'wrong';
-      const oldVal = player[field] ?? 0;
-      const newVal = oldVal + 1;
-
-      const players = state.players.map((p) =>
-        p.id === playerId ? { ...p, [field]: newVal } : p
-      );
+      const next = applyAnswer(state.rule, state.players, state.questionNo, playerId, result);
+      if (!next) return state;
 
       const entry = {
-        type: 'circle/record',
+        type: 'answer/record',
         playerId,
         result,
-        oldVal,
-        newVal,
+        changes: diffPlayers(state.players, next.players),
+        questionNo: { before: state.questionNo, after: next.questionNo },
         timestamp: Date.now(),
       };
 
@@ -124,7 +111,8 @@ export function appReducer(state, action) {
 
       return {
         ...state,
-        players,
+        players: next.players,
+        questionNo: next.questionNo,
         history,
         historyIndex: history.length - 1,
       };
@@ -133,42 +121,14 @@ export function appReducer(state, action) {
     case 'history/undo': {
       if (state.historyIndex < 0) return state;
       const entry = state.history[state.historyIndex];
-      if (entry.type === 'score/update') {
-        return {
-          ...state,
-          players: applyScore(state.players, entry.playerId, entry.oldScore),
-          historyIndex: state.historyIndex - 1,
-        };
-      }
-      if (entry.type === 'circle/record') {
-        return {
-          ...state,
-          players: applyCircle(state.players, entry.playerId, entry.result, entry.oldVal),
-          historyIndex: state.historyIndex - 1,
-        };
-      }
-      return { ...state, historyIndex: state.historyIndex - 1 };
+      return { ...applyEntry(state, entry, 'before'), historyIndex: state.historyIndex - 1 };
     }
 
     case 'history/redo': {
       const nextIndex = state.historyIndex + 1;
       if (nextIndex >= state.history.length) return state;
       const entry = state.history[nextIndex];
-      if (entry.type === 'score/update') {
-        return {
-          ...state,
-          players: applyScore(state.players, entry.playerId, entry.newScore),
-          historyIndex: nextIndex,
-        };
-      }
-      if (entry.type === 'circle/record') {
-        return {
-          ...state,
-          players: applyCircle(state.players, entry.playerId, entry.result, entry.newVal),
-          historyIndex: nextIndex,
-        };
-      }
-      return { ...state, historyIndex: nextIndex };
+      return { ...applyEntry(state, entry, 'after'), historyIndex: nextIndex };
     }
 
     case 'title/update': {
@@ -235,7 +195,8 @@ export function appReducer(state, action) {
     case 'scores/reset': {
       return {
         ...state,
-        players: state.players.map((p) => ({ ...p, score: 0, correct: 0, wrong: 0, locked: false })),
+        players: resetPlayFields(state.players, state.rule).map((p) => ({ ...p, locked: false })),
+        questionNo: 0,
         history: [],
         historyIndex: -1,
       };

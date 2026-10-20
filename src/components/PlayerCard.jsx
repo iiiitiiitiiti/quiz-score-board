@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { Lock, LockOpen, Trash2, Trophy } from 'lucide-react';
+import { getRule, playerView, FINISH_WON, FINISH_OUT } from '../rules/index.js';
+
+const BADGE_TONES = {
+  lamp: 'bg-lamp/15 text-lamp border-lamp/40',
+  ok: 'bg-ok/15 text-ok border-ok/40',
+  ng: 'bg-ng/15 text-ng border-ng/40',
+};
 
 // 解答者席パネル: 名前 → 電光数字 → 常時表示の操作ボタン、の縦構成
-function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, onWinner, onRename, children, actionButtons }) {
+function PlayerCardShell({ player, locked, finish, badges, isSorting, onRemove, onToggleLock, onWinner, onRename, children, actionButtons }) {
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState('');
 
@@ -17,7 +24,9 @@ function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, on
   };
 
   return (
-    <div className={`relative bg-panel rounded-2xl border shadow-md p-4 pt-2 flex flex-col items-center gap-2 transition-colors ${locked ? 'border-ink-dim/50 opacity-60 grayscale' : 'border-panel-edge'}`}>
+    <div className={`relative bg-panel rounded-2xl border shadow-md p-4 pt-2 flex flex-col items-center gap-2 transition-colors ${
+      locked ? 'border-ink-dim/50 opacity-60 grayscale' : finish === FINISH_WON ? 'border-lamp ring-2 ring-lamp/30' : finish === FINISH_OUT ? 'border-panel-edge opacity-60' : 'border-panel-edge'
+    }`}>
       {/* LOCKEDウォーターマーク */}
       {locked && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 rounded-2xl overflow-hidden">
@@ -86,6 +95,15 @@ function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, on
         </p>
       )}
 
+      {/* 札: 勝ち抜け・失格とルールごとの状態（通過席など）。高さを固定してカードの段をそろえる */}
+      <div className="h-6 flex flex-wrap items-center justify-center gap-1">
+        {badges.map((b) => (
+          <span key={b.label} className={`px-2 py-0.5 rounded-full border text-xs font-bold leading-none ${BADGE_TONES[b.tone] ?? BADGE_TONES.lamp}`}>
+            {b.label}
+          </span>
+        ))}
+      </div>
+
       {children}
 
       {!isSorting && <div className="w-full mt-1">{actionButtons}</div>}
@@ -93,17 +111,56 @@ function PlayerCardShell({ player, locked, isSorting, onRemove, onToggleLock, on
   );
 }
 
-export default function PlayerCard({ player, mode, dispatch, isSorting, onWinner }) {
+function ScoreDisplay({ view }) {
+  if (view.kind === 'circle') {
+    return (
+      <div className="h-14 flex items-center gap-2">
+        <span className="text-xl font-bold text-ok leading-none">○</span>
+        <span className="text-4xl font-black text-ok tabular-nums leading-none">{view.correct}</span>
+        {view.correctMax != null && <span className="text-base font-bold text-ok/70 tabular-nums leading-none">/{view.correctMax}</span>}
+        <div className="w-px h-8 bg-panel-edge mx-1" />
+        <span className="text-xl font-bold text-ng leading-none">✕</span>
+        <span className="text-4xl font-black text-ng tabular-nums leading-none">{view.wrong}</span>
+        {view.wrongMax != null && <span className="text-base font-bold text-ng/70 tabular-nums leading-none">/{view.wrongMax}</span>}
+      </div>
+    );
+  }
+  if (view.kind === 'text') {
+    return (
+      <p className="h-14 flex items-center text-2xl font-black tabular-nums text-lamp leading-none text-center">
+        {view.value}
+      </p>
+    );
+  }
+  // 電光数字: このカードの主役
+  return (
+    <p
+      className="h-14 flex items-center text-5xl font-black tabular-nums text-lamp leading-none"
+      style={{ textShadow: '0 0 24px rgba(217, 119, 6, 0.25)' }}
+    >
+      {view.value}
+    </p>
+  );
+}
+
+export default function PlayerCard({ player, players, rule, dispatch, isSorting, onWinner }) {
   const locked = player.locked ?? false;
+  const def = getRule(rule.id);
+  const view = playerView(rule, player, players);
+  // 勝ち負けの決まった人は reducer でも受け付けない。ボタンも止めて見た目で分かるようにする
+  const finished = player.finish === FINISH_WON || player.finish === FINISH_OUT;
+  const disabled = locked || finished;
 
-  const handleScore = (delta) => {
-    if (locked) return;
-    dispatch({ type: 'score/update', payload: { playerId: player.id, delta } });
-  };
+  const finishBadge =
+    player.finish === FINISH_WON
+      ? [{ label: `${player.finishOrder}抜け`, tone: 'lamp' }]
+      : player.finish === FINISH_OUT
+        ? [{ label: '失格', tone: 'ng' }]
+        : [];
 
-  const handleCircle = (result) => {
-    if (locked) return;
-    dispatch({ type: 'circle/record', payload: { playerId: player.id, result } });
+  const handleAnswer = (result) => {
+    if (disabled) return;
+    dispatch({ type: 'answer/record', payload: { playerId: player.id, result } });
   };
 
   const handleRemove = () => {
@@ -120,87 +177,62 @@ export default function PlayerCard({ player, mode, dispatch, isSorting, onWinner
     dispatch({ type: 'player/rename', payload: { id: player.id, name } });
   };
 
-  if (mode === 'circle-cross') {
-    const correct = player.correct ?? 0;
-    const wrong = player.wrong ?? 0;
-    return (
-      <PlayerCardShell
-        player={player}
-        locked={locked}
-        isSorting={isSorting}
-        onRemove={handleRemove}
-        onToggleLock={handleToggleLock}
-        onWinner={onWinner}
-        onRename={handleRename}
-        actionButtons={
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleCircle('correct')}
-              disabled={locked}
-              className="flex-1 flex items-center justify-center py-2 rounded-xl bg-ok/15 hover:bg-ok/30 text-ok font-bold text-xl border border-ok/40 transition-colors active:scale-95 disabled:cursor-not-allowed"
-              aria-label={`${player.name} に○`}
-            >
-              ○
-            </button>
-            <button
-              onClick={() => handleCircle('wrong')}
-              disabled={locked}
-              className="flex-1 flex items-center justify-center py-2 rounded-xl bg-ng/15 hover:bg-ng/30 text-ng font-bold text-xl border border-ng/40 transition-colors active:scale-95 disabled:cursor-not-allowed"
-              aria-label={`${player.name} に✕`}
-            >
-              ✕
-            </button>
-          </div>
-        }
-      >
-        <div className="h-14 flex items-center gap-2">
-          <span className="text-xl font-bold text-ok leading-none">○</span>
-          <span className="text-4xl font-black text-ok tabular-nums leading-none">{correct}</span>
-          <div className="w-px h-8 bg-panel-edge mx-1" />
-          <span className="text-xl font-bold text-ng leading-none">✕</span>
-          <span className="text-4xl font-black text-ng tabular-nums leading-none">{wrong}</span>
-        </div>
-      </PlayerCardShell>
+  const actionButtons =
+    def.buttonStyle === 'score' ? (
+      <div className="flex gap-2">
+        <button
+          onClick={() => handleAnswer('wrong')}
+          disabled={disabled}
+          className="flex-1 flex items-center justify-center py-2 rounded-xl bg-panel-edge/60 hover:bg-panel-edge text-ink font-bold text-base transition-colors active:scale-95 disabled:cursor-not-allowed"
+          aria-label={`${player.name} のスコアを減らす`}
+        >
+          {def.labels.wrong}
+        </button>
+        <button
+          onClick={() => handleAnswer('correct')}
+          disabled={disabled}
+          className="flex-1 flex items-center justify-center py-2 rounded-xl bg-lamp hover:bg-lamp/85 text-stage font-bold text-base transition-colors active:scale-95 disabled:cursor-not-allowed"
+          aria-label={`${player.name} のスコアを増やす`}
+        >
+          {def.labels.correct}
+        </button>
+      </div>
+    ) : (
+      <div className="flex gap-2">
+        <button
+          onClick={() => handleAnswer('correct')}
+          disabled={disabled}
+          className="flex-1 flex items-center justify-center py-2 rounded-xl bg-ok/15 hover:bg-ok/30 text-ok font-bold text-xl border border-ok/40 transition-colors active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={`${player.name} に${def.labels.correct}`}
+        >
+          {def.labels.correct}
+        </button>
+        <button
+          onClick={() => handleAnswer('wrong')}
+          disabled={disabled}
+          className="flex-1 flex items-center justify-center py-2 rounded-xl bg-ng/15 hover:bg-ng/30 text-ng font-bold text-xl border border-ng/40 transition-colors active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={`${player.name} に${def.labels.wrong}`}
+        >
+          {def.labels.wrong}
+        </button>
+      </div>
     );
-  }
 
   return (
     <PlayerCardShell
       player={player}
       locked={locked}
+      finish={player.finish}
+      badges={[...finishBadge, ...view.badges]}
       isSorting={isSorting}
       onRemove={handleRemove}
       onToggleLock={handleToggleLock}
       onWinner={onWinner}
       onRename={handleRename}
-      actionButtons={
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleScore(-1)}
-            disabled={locked}
-            className="flex-1 flex items-center justify-center py-2 rounded-xl bg-panel-edge/60 hover:bg-panel-edge text-ink font-bold text-base transition-colors active:scale-95 disabled:cursor-not-allowed"
-            aria-label={`${player.name} のスコアを減らす`}
-          >
-            −1
-          </button>
-          <button
-            onClick={() => handleScore(1)}
-            disabled={locked}
-            className="flex-1 flex items-center justify-center py-2 rounded-xl bg-lamp hover:bg-lamp/85 text-stage font-bold text-base transition-colors active:scale-95 disabled:cursor-not-allowed"
-            aria-label={`${player.name} のスコアを増やす`}
-          >
-            +1
-          </button>
-        </div>
-      }
+      actionButtons={actionButtons}
     >
-      {/* 電光数字: このカードの主役 */}
-      <p
-        className="h-14 flex items-center text-5xl font-black tabular-nums text-lamp leading-none"
-        style={{ textShadow: '0 0 24px rgba(217, 119, 6, 0.25)' }}
-      >
-        {player.score}
-      </p>
+      <ScoreDisplay view={view} />
+      <p className="h-5 text-sm text-ink-dim tabular-nums leading-5">{view.sub ?? ''}</p>
     </PlayerCardShell>
   );
 }

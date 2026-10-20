@@ -31,7 +31,7 @@ function App() {
   const canRedo = state.historyIndex < state.history.length - 1;
 
   const handleResetScores = () => {
-    if (window.confirm('全プレイヤーのスコアを 0 にリセットしますか？')) {
+    if (window.confirm('全プレイヤーの点数をルールの最初の値に戻しますか？（操作履歴も消えます）')) {
       dispatch({ type: 'scores/reset' });
     }
   };
@@ -138,17 +138,17 @@ function App() {
           />
         )}
 
-        {/* 準備バー: CSV・プレイヤー追加・モード切替 */}
+        {/* 準備バー: CSV・プレイヤー追加・ルール設定 */}
         <div className="mb-4">
           <Toolbar state={state} dispatch={dispatch} />
         </div>
 
-        <ScoreBoard players={state.players} mode={state.mode} dispatch={dispatch} onWinner={setWinner} />
+        <ScoreBoard players={state.players} rule={state.rule} dispatch={dispatch} onWinner={setWinner} />
       </div>
     </div>
 
     {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
-    {winner && <WinnerOverlay winner={winner} mode={state.mode} onClose={() => setWinner(null)} />}
+    {winner && <WinnerOverlay winner={winner} players={state.players} rule={state.rule} onClose={() => setWinner(null)} />}
     </>
   );
 }

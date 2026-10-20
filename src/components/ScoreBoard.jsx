@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect } from 'react';
 import { ArrowDownUp } from 'lucide-react';
 import PlayerCard from './PlayerCard.jsx';
+import { comparePlayers } from '../rules/index.js';
 
 function useFlipAnimation(containerRef, trigger) {
   const prevPositions = useRef({});
@@ -54,7 +55,7 @@ function useFlipAnimation(containerRef, trigger) {
   return { capture };
 }
 
-export default function ScoreBoard({ players, mode, dispatch, onWinner }) {
+export default function ScoreBoard({ players, rule, dispatch, onWinner }) {
   const dragFromRef = useRef(null);
   const [dragFrom, setDragFrom] = useState(null);
   const [insertAt, setInsertAt] = useState(null);
@@ -63,14 +64,7 @@ export default function ScoreBoard({ players, mode, dispatch, onWinner }) {
   const { capture } = useFlipAnimation(gridRef, sortedByScore);
 
   const displayPlayers = sortedByScore
-    ? [...players].sort((a, b) => {
-        if (mode === 'circle-cross') {
-          const correctDiff = (b.correct ?? 0) - (a.correct ?? 0);
-          if (correctDiff !== 0) return correctDiff;
-          return (a.wrong ?? 0) - (b.wrong ?? 0);
-        }
-        return b.score - a.score;
-      })
+    ? [...players].sort((a, b) => comparePlayers(rule, a, b))
     : players;
 
   const handleSortToggle = () => {
@@ -167,7 +161,7 @@ export default function ScoreBoard({ players, mode, dispatch, onWinner }) {
                   className="absolute top-0 right-0.5 h-full w-0.5 bg-lamp rounded-full z-30 pointer-events-none"
                 />
               )}
-              <PlayerCard player={player} mode={mode} dispatch={dispatch} isSorting={sortedByScore} onWinner={() => onWinner(player)} />
+              <PlayerCard player={player} players={players} rule={rule} dispatch={dispatch} isSorting={sortedByScore} onWinner={() => onWinner(player)} />
             </div>
           );
         })}
